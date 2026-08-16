@@ -29,17 +29,16 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3vh;
+  gap: 1.5vh;
   width: 100vw;
   min-height: 100vh;
   padding: 3vh 2vw;
+  /* Near-black charcoal with a subtle warm vignette glowing from the
+     top-center and darkening toward the edges/corners, rather than the
+     previous diagonal-lit warmer gradient. */
   background-image:
-    radial-gradient(
-      120% 90% at 18% -8%,
-      rgba(255, 255, 255, 0.07),
-      transparent 55%
-    ),
-    var(--grain), linear-gradient(160deg, #29261f 0%, #1c1a15 45%, #0f0e0b 100%);
+    radial-gradient(120% 90% at 50% 0%, rgba(255, 200, 150, 0.05), transparent 60%),
+    var(--grain), linear-gradient(180deg, #141414 0%, #0d0d0d 100%);
   background-repeat: no-repeat, repeat, no-repeat;
   /* Plain alpha compositing (normal) for every layer — no blend-mode
      math. background-blend-mode: screen looked right in every
@@ -55,18 +54,16 @@
 /* ── LITRES label ────────────────────────────────────────────── */
 
 .pump-label {
-  background: linear-gradient(180deg, #ffffff 0%, #eae7dd 55%, #cac6b8 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-  font-family: Arial, Helvetica, sans-serif;
+  color: #f5f5f5;
+  font-family: 'Archivo Black', 'Arial Black', Arial, Helvetica, sans-serif;
   font-weight: 900;
-  font-size: clamp(16px, 3.5vh, 72px);
-  letter-spacing: clamp(1px, 0.4vw, 10px);
+  font-size: clamp(18px, 4vh, 80px);
+  letter-spacing: clamp(0px, 0.12vw, 3px);
+  /* Raised-lettering emboss: a tight dark contact shadow plus a softer
+     cast shadow, no gradient fill — flat, bright, near-white per spec. */
   text-shadow:
-    0 0.35vh 0 rgba(0, 0, 0, 0.5),
-    0 0.9vh 1.2vh rgba(0, 0, 0, 0.45);
+    0 0.3vh 0 rgba(0, 0, 0, 0.6),
+    0 0.7vh 1vh rgba(0, 0, 0, 0.5);
 }
 
 /* ── Drum recess housing ─────────────────────────────────────── */
@@ -89,7 +86,9 @@
      alpha-over is compositor-independent and gives a near-identical
      look for a translucent light layer on a dark base anyway. */
   background-blend-mode: normal, normal, normal;
-  border-radius: 4px;
+  /* Halved (4px -> 2px) so this reads as a rectangular industrial
+     housing rather than a soft rounded card. */
+  border-radius: 2px;
   overflow: hidden;
   /* Deeper, stepped bezel to read as thick cut material rather than a
      thin outline: lip highlight -> dark groove -> bevel-face highlight
@@ -114,8 +113,11 @@
   display: flex;
   align-items: center;
   width: 100%;
-  gap: 1vw;
-  padding: 1.5vh 1.5vw;
+  /* Hairline default gap — digits within the same comma-group sit
+     almost touching. .comma adds its own extra margin on top of this,
+     so only group boundaries get a visibly wider gap. */
+  gap: clamp(1px, 0.15vw, 3px);
+  padding: 1.5vh 0.4vw;
   box-sizing: border-box;
 }
 
@@ -128,6 +130,13 @@
   min-width: 0;
 }
 
+/* The rightmost digit is deliberately narrower than the other nine, so
+   its numeral overflows and gets cropped by .digit-window's
+   overflow:hidden — the "mid-roll, cut off at the panel edge" look. */
+.digit-slot:last-child {
+  flex: 0.55;
+}
+
 .digit-window {
   position: relative;
   flex: 1;
@@ -135,14 +144,17 @@
   height: var(--window-h);
   overflow: hidden;
   background: var(--cell);
-  border-radius: 2px;
+  /* Halved (2px -> 1px), matching the outer panel's rectangular,
+     less-rounded industrial-housing treatment. */
+  border-radius: 1px;
+  /* Dark shadow at the top edge, subtle light highlight at the bottom
+     edge — inverted from the previous top-highlight treatment — per
+     the new reference's "physical well" spec. */
   box-shadow:
     inset 16px 0 26px rgba(0, 0, 0, 1),
     inset -16px 0 26px rgba(0, 0, 0, 1),
-    inset 0 5px 7px rgba(0, 0, 0, 0.85),
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    inset 0 -2px 5px rgba(0, 0, 0, 0.55),
-    0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 8px 10px rgba(0, 0, 0, 0.9),
+    inset 0 -2px 4px rgba(255, 255, 255, 0.16),
     /* Outer edge highlight/shadow pair so the housing strip between two
        slots reads as a raised rib catching light, not a flat gap. */
     1px 0 0 rgba(255, 255, 255, 0.06),
@@ -166,21 +178,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Arial Black', Arial, Helvetica, sans-serif;
+  font-family: 'Archivo Black', 'Arial Black', Arial, Helvetica, sans-serif;
   font-weight: 900;
-  /* font scales with the cell height, clamped so it never overflows.
-     0.85 (was 0.75) so the numeral fills most of its window like the
-     reference, leaving only a small margin before the cylinder fade. */
+  /* font scales with the cell height, clamped so it never overflows */
   font-size: calc(var(--window-h) * var(--cell-ratio) * 0.85);
-  background: linear-gradient(180deg, #ffffff 0%, #ffffff 82%, #f6f2e7 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
+  /* Solid bright white rather than the previous gradient-clip fill —
+     both because the spec explicitly wants flat high-contrast white,
+     not off-white/gray, and because a solid fill is the more reliable
+     technique (the gradient-clip approach has a documented history of
+     rendering inconsistently on real GPU-compositing browsers). */
+  color: #f5f5f5;
   text-shadow:
-    0.22vh 0.4vh 0.06vh rgba(0, 0, 0, 0.15),
-    0.45vh 0.85vh 0.25vh rgba(0, 0, 0, 0.15),
-    0 -0.08vh 0 rgba(255, 255, 255, 0.95);
+    0.22vh 0.4vh 0.06vh rgba(0, 0, 0, 0.35),
+    0.45vh 0.85vh 0.25vh rgba(0, 0, 0, 0.25);
 }
 
 /*
@@ -226,22 +236,23 @@
 
 .comma {
   flex-shrink: 0;
-  font-family: 'Arial Black', Arial, Helvetica, sans-serif;
+  font-family: 'Archivo Black', 'Arial Black', Arial, Helvetica, sans-serif;
   font-weight: 900;
-  font-size: calc(var(--window-h) * var(--cell-ratio) * 0.22);
-  width: clamp(10px, 1.6vw, 32px);
+  /* Bigger ratio (was 0.22) for a bold, chunky mark instead of a thin,
+     pale one. */
+  font-size: calc(var(--window-h) * var(--cell-ratio) * 0.32);
+  width: clamp(8px, 1.3vw, 26px);
   text-align: center;
   align-self: flex-end;
-  padding-bottom: calc(var(--window-h) * 0.1);
-  background: linear-gradient(180deg, #ffffff 0%, #ffffff 82%, #f6f2e7 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
+  padding-bottom: calc(var(--window-h) * 0.08);
+  /* Wider gap on this side only, pushing the start of the next group
+     away — .display-digits' hairline gap on the other side keeps this
+     comma sitting tight against the preceding digit. */
+  margin-right: clamp(4px, 1vw, 16px);
+  color: #f5f5f5;
   text-shadow:
-    0.15vh 0.28vh 0.08vh rgba(0, 0, 0, 0.6),
-    0.3vh 0.55vh 0.3vh rgba(0, 0, 0, 0.4),
-    0 -0.06vh 0 rgba(255, 255, 255, 0.35);
+    0.15vh 0.28vh 0.08vh rgba(0, 0, 0, 0.5),
+    0.3vh 0.55vh 0.3vh rgba(0, 0, 0, 0.35);
 }
 
 /* ── Control buttons ─────────────────────────────────────────── */
@@ -250,6 +261,10 @@
   display: flex;
   gap: clamp(24px, 5vw, 80px);
   align-items: flex-start;
+  /* .pump's gap was tightened (3vh -> 1.5vh) to pull LITRES closer to
+     the display panel; this restores the display-to-buttons spacing
+     that would otherwise have shrunk along with it. */
+  margin-top: 1.5vh;
 }
 
 .button-group {
