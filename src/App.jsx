@@ -2,11 +2,18 @@ import { useEffect, useRef, useState } from 'react'
 import DigitWheel from './DigitWheel.jsx'
 import './App.css'
 
-const DIGIT_COUNT = 8
-// Positions (0-indexed from the left) after which a comma is printed.
-const COMMA_AFTER = [1, 4]
+const DIGIT_COUNT = 10  // covers up to 9,999,999,999 — the real target is in the billions
+// Positions (0-indexed from the left) after which a comma is printed —
+// derived from DIGIT_COUNT so it's automatically correct if this changes
+// again (standard thousands grouping, counting from the right).
+const COMMA_AFTER = Array.from({ length: DIGIT_COUNT - 1 }, (_, i) => i).filter(
+  (i) => (DIGIT_COUNT - 1 - i) % 3 === 0
+)
 const TICK_MS = 50
-const MAX_RATE = 5000  // average increments/tick at full speed
+// Tuned so a full run (0 to MAX_VALUE, ~10 billion) takes ~15-20s: with
+// RAMP_TICKS of quadratic ease-in then steady state, average full-speed
+// throughput is MAX_RATE * 0.75 per tick (see the 0.5 + 0.5*random below).
+const MAX_RATE = 40_000_000  // average increments/tick at full speed
 const RAMP_TICKS = 20  // ticks to reach full speed (~1 s)
 const MAX_VALUE = 10 ** DIGIT_COUNT - 1
 
