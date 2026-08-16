@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 
 // Number of times the 0-9 sequence repeats in the scrolling strip.
 const REPEATS = 40
@@ -22,22 +22,27 @@ function buildStrip() {
  * `digit` is the 0-9 value it should be showing.
  * `resetSignal` changes whenever the whole counter is reset, which makes
  * the wheel snap straight to 0 instead of rolling backwards.
+ * `tickMs` must match the counter's tick interval — it sets the roll
+ * transition duration so each step finishes exactly as the next one
+ * starts, instead of being cut off mid-animation.
  */
-export default function DigitWheel({ digit, resetSignal }) {
+function DigitWheel({ digit, resetSignal, tickMs }) {
   const strip = useMemo(buildStrip, [])
   const [pos, setPos] = useState(0)
   const [transitionOn, setTransitionOn] = useState(true)
   const prevDigit = useRef(0)
   const prevReset = useRef(resetSignal)
+  // Set synchronously alongside the pos update it belongs to, then
+  // consumed by the effect below — see the wrap-handling comment.
+  const pendingSkipRef = useRef(false)
 
   // Roll forward to the next matching digit whenever the target digit changes.
   useEffect(() => {
     if (prevReset.current !== resetSignal) {
       prevReset.current = resetSignal
       prevDigit.current = digit
-      setTransitionOn(false)
+      pendingSkipRef.current = true
       setPos(0)
-      requestAnimationFrame(() => requestAnimationFrame(() => setTransitionOn(true)))
       return
     }
 
@@ -45,7 +50,23 @@ export default function DigitWheel({ digit, resetSignal }) {
     prevDigit.current = digit
 
     setPos((current) => {
-      let next = current + 1
+      // Keep the physical strip index bounded to the 400 rendered cells.
+      // If we're close to the end, fold the baseline back to the
+      // equivalent position near the start (same digit value, since
+      // strip[i] === i % 10) *before* searching forward — in the same
+      // synchronous update that advances to the new digit, not as a
+      // separate later step.
+      //
+      // The previous version did this as its own effect, async via
+      // requestAnimationFrame (disable transition, snap, re-enable two
+      // frames later). That left a window where a fast-arriving tick
+      // could read the not-yet-wrapped position and search forward from
+      // it, pushing pos past the end of the strip — which rendered as
+      // blank space (the digit appearing to vanish). Folding the wrap
+      // into this one state update removes that window entirely.
+      const base = current >= STRIP_LENGTH - 30 ? current % 10 : current
+      pendingSkipRef.current = base !== current
+      let next = base + 1
       while (strip[next % strip.length] !== digit) {
         next++
       }
@@ -53,23 +74,14 @@ export default function DigitWheel({ digit, resetSignal }) {
     })
   }, [digit, resetSignal, strip])
 
-  // Once the wheel has spun most of the way down the strip, jump it
-  // invisibly back to the equivalent position near the top.
-  //
-  // The threshold is STRIP_LENGTH - 30 (not the old - 10 with pos%10===0)
-  // because with a fast counter the position can advance up to 10 steps in
-  // one tick, meaning it can blow past 390 without landing on a multiple of
-  // 10 and then overshoot past 400 (the strip end), making the window show
-  // empty space.  Snapping to pos%10 always lands on the same digit value
-  // because strip[i] = i%10, so strip[pos] === strip[pos%10].
+  // A wrap (or a reset) just moved pos backwards without animating —
+  // suppress the transition for exactly this one render, then restore it
+  // two frames later so the *next* forward step rolls normally.
   useEffect(() => {
-    if (pos >= STRIP_LENGTH - 30) {
-      requestAnimationFrame(() => {
-        setTransitionOn(false)
-        setPos(pos % 10)
-        requestAnimationFrame(() => requestAnimationFrame(() => setTransitionOn(true)))
-      })
-    }
+    if (!pendingSkipRef.current) return
+    pendingSkipRef.current = false
+    setTransitionOn(false)
+    requestAnimationFrame(() => requestAnimationFrame(() => setTransitionOn(true)))
   }, [pos])
 
   return (
@@ -80,7 +92,7 @@ export default function DigitWheel({ digit, resetSignal }) {
           // Percentage positions the strip so digit `pos` is at the window top;
           // the pixel offset then shifts it down to centre it in the window.
           transform: `translateY(-${pos * (100 / STRIP_LENGTH)}%)`,
-          transition: transitionOn ? 'transform 120ms ease-out' : 'none',
+          transition: transitionOn ? `transform ${tickMs}ms ease-out` : 'none',
         }}
       >
         {strip.map((d, i) => (
@@ -94,3 +106,5 @@ export default function DigitWheel({ digit, resetSignal }) {
     </div>
   )
 }
+
+export default memo(DigitWheel)

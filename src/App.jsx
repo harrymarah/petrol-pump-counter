@@ -9,12 +9,16 @@ const DIGIT_COUNT = 10  // covers up to 9,999,999,999 — the real target is in 
 const COMMA_AFTER = Array.from({ length: DIGIT_COUNT - 1 }, (_, i) => i).filter(
   (i) => (DIGIT_COUNT - 1 - i) % 3 === 0
 )
-const TICK_MS = 50
+// Matches the digit-roll CSS transition duration (see DigitWheel) so each
+// step finishes exactly as the next tick arrives, instead of being
+// interrupted mid-animation — that mismatch (50ms ticks vs a 120ms
+// transition) was the main cause of the juddery motion.
+const TICK_MS = 120
 // Tuned so a full run (0 to MAX_VALUE, ~10 billion) takes ~15-20s: with
 // RAMP_TICKS of quadratic ease-in then steady state, average full-speed
 // throughput is MAX_RATE * 0.75 per tick (see the 0.5 + 0.5*random below).
-const MAX_RATE = 40_000_000  // average increments/tick at full speed
-const RAMP_TICKS = 20  // ticks to reach full speed (~1 s)
+const MAX_RATE = 95_000_000  // average increments/tick at full speed
+const RAMP_TICKS = 8  // ticks to reach full speed (~1 s)
 const MAX_VALUE = 10 ** DIGIT_COUNT - 1
 
 function App() {
@@ -69,7 +73,7 @@ function App() {
         <div className="display-digits">
           {digits.map((digit, i) => (
             <span className="digit-slot" key={i}>
-              <DigitWheel digit={digit} resetSignal={resetSignal} />
+              <DigitWheel digit={digit} resetSignal={resetSignal} tickMs={TICK_MS} />
               {COMMA_AFTER.includes(i) && <span className="comma">,</span>}
             </span>
           ))}
