@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import DigitWheel from './DigitWheel.jsx'
 import './App.css'
 
-const DIGIT_COUNT = 11  // covers up to 99,999,999,999 — real target is ~13 billion
+const DIGIT_COUNT = 10  // covers up to 9,999,999,999 — real target is ~3.25 billion litres
 // Positions (0-indexed from the left) after which a comma is printed —
 // derived from DIGIT_COUNT so it's automatically correct if this changes
 // again (standard thousands grouping, counting from the right).
@@ -14,11 +14,12 @@ const COMMA_AFTER = Array.from({ length: DIGIT_COUNT - 1 }, (_, i) => i).filter(
 // interrupted mid-animation — that mismatch (50ms ticks vs a 120ms
 // transition) was the main cause of the juddery motion.
 const TICK_MS = 120
-// The real answer the client will reveal: ~13 billion litres. Pacing below
-// is derived from THIS, not MAX_VALUE — MAX_VALUE is just the display's
+// The real answer the client will reveal, in LITRES (not cans — a can is
+// ~250ml, so ~13 billion cans is ~3.25 billion litres). Pacing below is
+// derived from THIS, not MAX_VALUE — MAX_VALUE is just the display's
 // headroom so the counter can keep running sensibly if held past the
 // target, not the number a run is paced to reach.
-const REAL_TARGET = 13_000_000_000
+const REAL_TARGET = 3_250_000_000
 const RUN_SECONDS = 17.5  // midpoint of the ~15-20s pacing target
 const RAMP_TICKS = 8  // ticks to reach full speed (~1 s)
 
