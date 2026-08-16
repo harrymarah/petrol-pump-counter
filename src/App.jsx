@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import DigitWheel from './DigitWheel.jsx'
 import './App.css'
 
@@ -89,10 +89,18 @@ function App() {
       <div className="pump-display">
         <div className="display-digits">
           {digits.map((digit, i) => (
-            <span className="digit-slot" key={i}>
-              <DigitWheel digit={digit} resetSignal={resetSignal} tickMs={TICK_MS} />
+            // Each digit-window and each comma is its own flex item here —
+            // deliberately NOT nested together in a shared wrapper. Nesting
+            // them meant a slot with a comma had to share its flex:1 share
+            // with that comma, making that digit-window narrower than the
+            // 7 slots with no comma. Flat siblings means every digit-window
+            // gets an equal share regardless of neighboring commas.
+            <Fragment key={i}>
+              <span className="digit-slot">
+                <DigitWheel digit={digit} resetSignal={resetSignal} tickMs={TICK_MS} />
+              </span>
               {COMMA_AFTER.includes(i) && <span className="comma">,</span>}
-            </span>
+            </Fragment>
           ))}
         </div>
       </div>
