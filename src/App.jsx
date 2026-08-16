@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import DigitWheel from './DigitWheel.jsx'
 import './App.css'
 
-const DIGIT_COUNT = 10  // covers up to 9,999,999,999 — the real target is in the billions
+const DIGIT_COUNT = 11  // covers up to 99,999,999,999 — real target is ~13 billion
 // Positions (0-indexed from the left) after which a comma is printed —
 // derived from DIGIT_COUNT so it's automatically correct if this changes
 // again (standard thousands grouping, counting from the right).
@@ -14,11 +14,27 @@ const COMMA_AFTER = Array.from({ length: DIGIT_COUNT - 1 }, (_, i) => i).filter(
 // interrupted mid-animation — that mismatch (50ms ticks vs a 120ms
 // transition) was the main cause of the juddery motion.
 const TICK_MS = 120
-// Tuned so a full run (0 to MAX_VALUE, ~10 billion) takes ~15-20s: with
-// RAMP_TICKS of quadratic ease-in then steady state, average full-speed
-// throughput is MAX_RATE * 0.75 per tick (see the 0.5 + 0.5*random below).
-const MAX_RATE = 95_000_000  // average increments/tick at full speed
+// The real answer the client will reveal: ~13 billion litres. Pacing below
+// is derived from THIS, not MAX_VALUE — MAX_VALUE is just the display's
+// headroom so the counter can keep running sensibly if held past the
+// target, not the number a run is paced to reach.
+const REAL_TARGET = 13_000_000_000
+const RUN_SECONDS = 17.5  // midpoint of the ~15-20s pacing target
 const RAMP_TICKS = 8  // ticks to reach full speed (~1 s)
+
+// MAX_RATE is derived from REAL_TARGET rather than a hand-picked magic
+// number, so it stays correct if the target, RUN_SECONDS or TICK_MS ever
+// change. Per tick, the average step is MAX_RATE * 0.75 (see the
+// 0.5 + 0.5*random below in the tick handler), scaled by a quadratic
+// ease-in during the ramp and at full strength after it. Solving for the
+// total distance over RUN_SECONDS to equal REAL_TARGET gives the rate
+// that lands a run right on target.
+const totalTicks = (RUN_SECONDS * 1000) / TICK_MS
+let rampFactorSum = 0
+for (let k = 1; k <= RAMP_TICKS; k++) {
+  rampFactorSum += (k / RAMP_TICKS) ** 2
+}
+const MAX_RATE = REAL_TARGET / (0.75 * (rampFactorSum + (totalTicks - RAMP_TICKS)))
 const MAX_VALUE = 10 ** DIGIT_COUNT - 1
 
 function App() {
