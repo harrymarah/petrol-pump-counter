@@ -23,7 +23,7 @@
   --top-pct: 15%; /* (1 - 0.7) / 2 = 15 %        */
   /* Procedural fractal-noise tile used for the moulded-plastic grain
      visible on the housing surfaces. No raster asset needed. */
-  --grain: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='64'%20height='64'%3E%3Cfilter%20id='n'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='1.15'%20numOctaves='2'%20stitchTiles='stitch'/%3E%3CfeColorMatrix%20type='matrix'%20values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect%20width='64'%20height='64'%20filter='url(%23n)'/%3E%3C/svg%3E");
+  --grain: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='64'%20height='64'%3E%3Cfilter%20id='n'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='1.15'%20numOctaves='2'%20stitchTiles='stitch'/%3E%3CfeColorMatrix%20type='matrix'%20values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.13 0'/%3E%3C/filter%3E%3Crect%20width='64'%20height='64'%20filter='url(%23n)'/%3E%3C/svg%3E");
 
   display: flex;
   flex-direction: column;
@@ -99,10 +99,14 @@
     inset 0 -6px 20px rgba(0, 0, 0, 0.9),
     inset 10px 0 22px rgba(0, 0, 0, 0.65),
     inset -10px 0 22px rgba(0, 0, 0, 0.65),
-    0 0 0 2px rgba(255, 255, 255, 0.08),
-    0 0 0 7px #0a0908,
-    0 0 0 9px rgba(255, 255, 255, 0.05),
-    0 0 0 13px #050403,
+    /* Each ring now carries a bit of blur so it feathers into its
+       neighbour — a soft ambient-occlusion-style falloff at the
+       housing-to-window transition, like the reference, rather than
+       the crisp CAD-line edges a 0-blur spread-only ring gives. */
+    0 0 3px 2px rgba(255, 255, 255, 0.08),
+    0 0 4px 7px #0a0908,
+    0 0 3px 9px rgba(255, 255, 255, 0.05),
+    0 0 5px 13px #050403,
     0 8px 24px rgba(0, 0, 0, 0.7);
 }
 
@@ -164,8 +168,10 @@
   justify-content: center;
   font-family: 'Arial Black', Arial, Helvetica, sans-serif;
   font-weight: 900;
-  /* font scales with the cell height, clamped so it never overflows */
-  font-size: calc(var(--window-h) * var(--cell-ratio) * 0.75);
+  /* font scales with the cell height, clamped so it never overflows.
+     0.85 (was 0.75) so the numeral fills most of its window like the
+     reference, leaving only a small margin before the cylinder fade. */
+  font-size: calc(var(--window-h) * var(--cell-ratio) * 0.85);
   background: linear-gradient(180deg, #ffffff 0%, #ffffff 82%, #f6f2e7 100%);
   -webkit-background-clip: text;
   background-clip: text;
