@@ -41,7 +41,14 @@
     ),
     var(--grain), linear-gradient(160deg, #29261f 0%, #1c1a15 45%, #0f0e0b 100%);
   background-repeat: no-repeat, repeat, no-repeat;
-  background-blend-mode: screen, screen, normal;
+  /* Plain alpha compositing (normal) for every layer — no blend-mode
+     math. background-blend-mode: screen looked right in every
+     automated/headless test this session, but silently failed to
+     render at all on a real GPU-compositing browser (the exact same
+     failure mode we hit earlier with `filter` + text-clip). Normal
+     alpha-over is compositor-independent and gives a near-identical
+     look for a translucent light layer on a dark base anyway. */
+  background-blend-mode: normal, normal, normal;
   box-sizing: border-box;
 }
 
@@ -74,7 +81,14 @@
     ),
     var(--grain), linear-gradient(155deg, #171410 0%, var(--window) 60%);
   background-repeat: no-repeat, repeat, no-repeat;
-  background-blend-mode: screen, screen, normal;
+  /* Plain alpha compositing (normal) for every layer — no blend-mode
+     math. background-blend-mode: screen looked right in every
+     automated/headless test this session, but silently failed to
+     render at all on a real GPU-compositing browser (the exact same
+     failure mode we hit earlier with `filter` + text-clip). Normal
+     alpha-over is compositor-independent and gives a near-identical
+     look for a translucent light layer on a dark base anyway. */
+  background-blend-mode: normal, normal, normal;
   border-radius: 4px;
   overflow: hidden;
   /* Deeper, stepped bezel to read as thick cut material rather than a
