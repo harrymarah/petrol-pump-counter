@@ -1,0 +1,277 @@
+/*
+ * Sizing strategy
+ * ───────────────
+ * All heights are expressed in vh so the display fills the screen vertically.
+ * Widths are handled with flex so the drums fill the screen horizontally.
+ *
+ * The digit window is 1/0.7 × the cell height (cell fills 70 % of window),
+ * giving 15 % dead-zone top and bottom for the cylinder-curve effect.
+ * That 15 % is baked into CSS as  .digit-strip { top: 15% }  so the JS
+ * transform needs no pixel offset — it is purely a percentage scroll.
+ *
+ * Key custom properties (adjust here to tune proportions):
+ *   --window-h   visible drum height
+ *   --cell-ratio cell height as a fraction of window height (must stay 0.7)
+ */
+.pump {
+  --plate: #1c1a17;
+  --window: #0b0a08;
+  --cell: #14120f;
+  --digit-color: #f8f4e8;
+  --window-h: 42vh;
+  --cell-ratio: 0.7;            /* CELL_HEIGHT / WINDOW_HEIGHT  */
+  --top-pct: 15%;               /* (1 - 0.7) / 2 = 15 %        */
+  /* Procedural fractal-noise tile used for the moulded-plastic grain
+     visible on the housing surfaces. No raster asset needed. */
+  --grain: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='100'%20height='100'%3E%3Cfilter%20id='n'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.85'%20numOctaves='2'%20stitchTiles='stitch'/%3E%3CfeColorMatrix%20type='matrix'%20values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect%20width='100'%20height='100'%20filter='url(%23n)'/%3E%3C/svg%3E");
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3vh;
+  width: 100vw;
+  min-height: 100vh;
+  padding: 3vh 2vw;
+  background-image:
+    radial-gradient(120% 90% at 18% -8%, rgba(255, 255, 255, 0.07), transparent 55%),
+    var(--grain),
+    linear-gradient(160deg, #29261f 0%, #1c1a15 45%, #0f0e0b 100%);
+  background-repeat: no-repeat, repeat, no-repeat;
+  background-blend-mode: screen, overlay, normal;
+  box-sizing: border-box;
+}
+
+/* ── LITRES label ────────────────────────────────────────────── */
+
+.pump-label {
+  background: linear-gradient(180deg, #ffffff 0%, #eae7dd 55%, #cac6b8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 900;
+  font-size: clamp(16px, 3.5vh, 72px);
+  letter-spacing: clamp(3px, 1vw, 22px);
+  text-shadow:
+    0 0.35vh 0 rgba(0, 0, 0, 0.5),
+    0 0.9vh 1.2vh rgba(0, 0, 0, 0.45);
+}
+
+/* ── Drum recess housing ─────────────────────────────────────── */
+
+.pump-display {
+  width: 100%;
+  background-image:
+    radial-gradient(100% 140% at 15% -10%, rgba(255, 255, 255, 0.05), transparent 50%),
+    var(--grain),
+    linear-gradient(155deg, #171410 0%, var(--window) 60%);
+  background-repeat: no-repeat, repeat, no-repeat;
+  background-blend-mode: screen, overlay, normal;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow:
+    inset 0 14px 40px rgba(0, 0, 0, 1),
+    inset 0 -6px 20px rgba(0, 0, 0, 0.9),
+    inset 10px 0 22px rgba(0, 0, 0, 0.65),
+    inset -10px 0 22px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 0 0 3px #0e0d0b,
+    0 0 0 5px #2c2822,
+    0 8px 24px rgba(0, 0, 0, 0.7);
+}
+
+.display-digits {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 1vw;
+  padding: 1.5vh 1.5vw;
+  box-sizing: border-box;
+}
+
+/* ── Individual drum slots ───────────────────────────────────── */
+
+.digit-slot {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.digit-window {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: var(--window-h);
+  overflow: hidden;
+  background: var(--cell);
+  border-radius: 2px;
+  box-shadow:
+    inset 16px 0 26px rgba(0, 0, 0, 1),
+    inset -16px 0 26px rgba(0, 0, 0, 1),
+    inset 0 5px 7px rgba(0, 0, 0, 0.85),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.55),
+    0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.digit-strip {
+  position: absolute;
+  /*
+   * top: 15% centres the strip so digit-0 sits in the middle of the window.
+   * Derivation: TOP_OFFSET = (1 − CELL_RATIO) / 2 = (1 − 0.7) / 2 = 0.15
+   * 15 % of .digit-window height = the pixel TOP_OFFSET for any window size.
+   */
+  top: var(--top-pct);
+  left: 0;
+  width: 100%;
+}
+
+.digit-cell {
+  height: calc(var(--window-h) * var(--cell-ratio));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Arial Black', Arial, Helvetica, sans-serif;
+  font-weight: 900;
+  /* font scales with the cell height, clamped so it never overflows */
+  font-size: calc(var(--window-h) * var(--cell-ratio) * 0.75);
+  background: linear-gradient(180deg, #ffffff 0%, #ffffff 82%, #f6f2e7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  text-shadow:
+    0.22vh 0.4vh 0.1vh rgba(0, 0, 0, 0.6),
+    0.45vh 0.85vh 0.4vh rgba(0, 0, 0, 0.4),
+    0 -0.08vh 0 rgba(255, 255, 255, 0.35);
+}
+
+/*
+ * Cylinder gradient overlay.
+ * Percentage breakpoints map to the window zones:
+ *   0 – 15 %  : above the digit (partial prev drum visible through gradient)
+ *  15 – 85 %  : the main digit (clear centre with gradual fade at edges)
+ *  85 – 100 % : below the digit (partial next drum visible through gradient)
+ */
+.digit-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background:
+    radial-gradient(
+      ellipse 60% 38% at 50% 50%,
+      rgba(255, 255, 255, 0.07) 0%,
+      rgba(255, 255, 255, 0) 100%
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.07) 0%,
+      rgba(255, 255, 255, 0.01) 35%,
+      rgba(255, 255, 255, 0) 55%
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.97) 0%,
+      rgba(0, 0, 0, 0.75) 6%,
+      rgba(0, 0, 0, 0.22) 16%,
+      rgba(0, 0, 0, 0.05) 24%,
+      rgba(0, 0, 0, 0)    30%,
+      rgba(0, 0, 0, 0)    70%,
+      rgba(0, 0, 0, 0.05) 76%,
+      rgba(0, 0, 0, 0.22) 84%,
+      rgba(0, 0, 0, 0.75) 94%,
+      rgba(0, 0, 0, 0.97) 100%
+    );
+}
+
+/* ── Comma separators ────────────────────────────────────────── */
+
+.comma {
+  flex-shrink: 0;
+  font-family: 'Arial Black', Arial, Helvetica, sans-serif;
+  font-weight: 900;
+  font-size: calc(var(--window-h) * var(--cell-ratio) * 0.22);
+  width: clamp(10px, 1.6vw, 32px);
+  text-align: center;
+  align-self: flex-end;
+  padding-bottom: calc(var(--window-h) * 0.1);
+  background: linear-gradient(180deg, #ffffff 0%, #ffffff 82%, #f6f2e7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  text-shadow:
+    0.15vh 0.28vh 0.08vh rgba(0, 0, 0, 0.6),
+    0.3vh 0.55vh 0.3vh rgba(0, 0, 0, 0.4),
+    0 -0.06vh 0 rgba(255, 255, 255, 0.35);
+}
+
+/* ── Control buttons ─────────────────────────────────────────── */
+
+.pump-controls {
+  display: flex;
+  gap: clamp(24px, 5vw, 80px);
+  align-items: flex-start;
+}
+
+.button-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1vh;
+}
+
+.button-label {
+  color: #c0c0c0;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 700;
+  font-size: clamp(9px, 1.4vh, 18px);
+  letter-spacing: 0.8px;
+  text-align: center;
+  white-space: pre-line;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.pump-button {
+  width: clamp(48px, 7vh, 90px);
+  height: clamp(48px, 7vh, 90px);
+  border-radius: 50%;
+  border: none;
+  background: radial-gradient(
+    circle at 38% 32%,
+    #e84040 0%,
+    #bf0000 50%,
+    #7a0000 100%
+  );
+  box-shadow:
+    0 5px 10px rgba(0, 0, 0, 0.55),
+    0 2px 4px rgba(0, 0, 0, 0.4),
+    inset 0 2px 4px rgba(255, 255, 255, 0.18),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  outline: 2px solid #1a0000;
+  outline-offset: 2px;
+  transition: transform 60ms ease-out, box-shadow 60ms ease-out;
+}
+
+.pump-button:hover {
+  background: radial-gradient(
+    circle at 38% 32%,
+    #ff5555 0%,
+    #d40000 50%,
+    #8a0000 100%
+  );
+}
+
+.pump-button:active {
+  transform: translateY(2px) scale(0.97);
+  box-shadow:
+    0 2px 5px rgba(0, 0, 0, 0.55),
+    inset 0 3px 6px rgba(0, 0, 0, 0.45),
+    inset 0 -1px 2px rgba(255, 255, 255, 0.08);
+}
