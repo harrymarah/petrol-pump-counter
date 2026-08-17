@@ -21,12 +21,55 @@
   /* Bumped 42vh -> 48vh so the digit window is the dominant, near
      edge-to-edge element the reference shows, not a smaller block
      with a lot of surrounding charcoal. */
-  --window-h: 48vh;
+  --window-h: 45vh;
   --cell-ratio: 0.7; /* CELL_HEIGHT / WINDOW_HEIGHT  */
   --top-pct: 15%; /* (1 - 0.7) / 2 = 15 %        */
   /* Procedural fractal-noise tile used for the moulded-plastic grain
      visible on the housing surfaces. No raster asset needed. */
   --grain: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='64'%20height='64'%3E%3Cfilter%20id='n'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='1.15'%20numOctaves='2'%20stitchTiles='stitch'/%3E%3CfeColorMatrix%20type='matrix'%20values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.13 0'/%3E%3C/filter%3E%3Crect%20width='64'%20height='64'%20filter='url(%23n)'/%3E%3C/svg%3E");
+  /* Directional fractal-noise tile for the brushed-steel bezel: very low
+     baseFrequency on the x-axis (near-constant along a row) and high
+     baseFrequency on the y-axis (rapid change row-to-row) turns the same
+     turbulence primitive into fine horizontal striations instead of
+     isotropic grain — a real procedural texture, not a flat gradient,
+     and (per the earlier background-blend-mode failure on real GPU
+     compositing, see project memory) composited with plain alpha-over,
+     never a blend-mode. */
+  /* Enlarged from the previous 260x40 tile — at panel scale that tiled
+     ~6x horizontally and ~15x vertically, which read as an obviously
+     repeating pattern at normal viewing size. baseFrequency is kept the
+     same, so stripe density/thickness is unchanged; only the tile's
+     physical size (and so its repeat period) grows. Still one
+     directional (low-x/high-y baseFrequency) turbulence primitive. */
+  --grain-metal: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='980'%20height='170'%3E%3Cfilter%20id='m'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.012%200.55'%20numOctaves='2'%20stitchTiles='stitch'/%3E%3CfeColorMatrix%20type='matrix'%20values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.1 0'/%3E%3C/filter%3E%3Crect%20width='980'%20height='170'%20filter='url(%23m)'/%3E%3C/svg%3E");
+  /* A second, independently-sized/frequency layer composited on top of
+     --grain-metal. Two textures tiling at different (non-common-multiple)
+     periods combine into an effective repeat period equal to their
+     LCM — large enough that no repetition is perceptible in the
+     viewport, without needing one enormous single texture. This one is
+     coarser and less directional (larger, closer-to-isotropic
+     baseFrequency), adding large-scale mottling so the surface doesn't
+     read as one uniform fine-line pattern either. */
+  --grain-metal-coarse: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='677'%20height='241'%3E%3Cfilter%20id='c'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.045%200.09'%20numOctaves='3'%20stitchTiles='stitch'/%3E%3CfeColorMatrix%20type='matrix'%20values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect%20width='677'%20height='241'%20filter='url(%23c)'/%3E%3C/svg%3E");
+  /* Sampled directly from the reference photo's pixels (not eyeballed):
+     flat panel areas away from any edge/highlight sit around rgb(25-60)
+     — a dark gunmetal, not a bright silver — with brightness confined to
+     thin specular streaks right at bevel edges. See project memory for
+     the sampling coordinates/values this is based on. Pushed darker
+     again this round (blackened/anodized steel, not mid-grey): --metal-lo
+     down to near-black, --metal-hi reserved for edges/streak only. */
+  /* Re-grounded against the current reference mockup's own pixels this
+     round (not the previous near-black pass): flat metal away from the
+     highlight streak samples at luma ~25-65 with the brief specifying a
+     base in the #2a2c2e-#35373a band; the bright zone is a single broad
+     near-vertical streak around x~15% peaking at luma ~110-130, fading
+     to ~25 at the far right. So: a mid-dark gunmetal BASE, with all
+     brightness variation carried by the streak/shade layers on
+     .pump-panel, not by the base color. */
+  --metal-hi: #75787b;
+  --metal-mid: #1c1d1f;
+  --metal-lo: #2c2e31;
+  --metal-edge: #d8d9da;
 
   display: flex;
   flex-direction: column;
@@ -58,10 +101,125 @@
   box-sizing: border-box;
 }
 
+/* ── Metal panel ──────────────────────────────────────────────
+ * Everything the reference shows as one continuous brushed-metal
+ * housing — LITRES and the recessed digit window both sit on this
+ * single surface, sharing its bevel/lighting — rather than LITRES
+ * living on the page backdrop above a separate display housing. */
+
+.pump-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1vh;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 1.6vh 1.8vw 1.8vh;
+  /* Dark gunmetal, not bright chrome: sampled from the reference photo's
+     own flat-panel pixels (rgb ~25-60 away from any edge), so the
+     visible "metal" read comes from the grain texture and the thin
+     bevel highlight lines below, not from a broadly bright fill.
+     Deliberately a SOLID base color, not a full-panel gradient: this
+     panel is roughly 8:1 width:height, and an angled linear-gradient's
+     iso-color bands run perpendicular to the angle across the full box
+     — on this aspect ratio, both a 145deg and a 155deg attempt washed
+     large stretches of the panel far brighter than intended well away
+     from the corner (caught by sampling actual rendered pixels, not by
+     eyeballing a screenshot: e.g. a point 90% across the panel's width
+     still read ~rgb(68), not near the dark end). A flat base sidesteps
+     that geometry entirely.
+     Directional highlight: a single thin bright BAND at a fixed
+     percentage position along the gradient axis (not a broad 0-100%
+     fade) — replaces the earlier isolated corner radial-gradient
+     "blob", which had no relationship to the rest of the panel's
+     lighting. Narrow bands like this don't hit the same aspect-ratio
+     problem the earlier full-panel gradient did, since only the ~10%
+     band itself carries color, not a large interpolated region — but
+     still verified against actual rendered pixels below, same as the
+     base-color fix, rather than assumed. Angled at 100deg (just past
+     horizontal) so it reads as one coherent streak of light raking
+     across the surface from upper-left, consistent with the bevel's
+     and emboss's own top-left light source (see project memory: keep
+     every lit-surface effect on this panel pointing the same way). */
+  /* Lighting layers, matched to the reference's own sampled luma
+     profile rather than eyeballed: one broad, near-vertical streak of
+     light peaking around x~14% (ref peaks luma ~110-130 there, on a
+     base of ~45-55), a progressive shade toward the right edge (ref
+     falls to luma ~25-30 past x~0.6), and a soft darkening along the
+     bottom (ref bottom strip ~25-40). All at 97deg/180deg so the
+     iso-color bands run near-vertical/horizontal — the earlier
+     8:1-aspect-ratio gradient wash problem (see project memory) only
+     bites when an angled gradient is meant to stay LOCAL to a corner;
+     these are deliberately full-width sweeps. */
+  background-image:
+    linear-gradient(
+      97deg,
+      rgba(255, 255, 255, 0.06) 0%,
+      rgba(255, 255, 255, 0.26) 9%,
+      rgba(255, 255, 255, 0.44) 14%,
+      rgba(255, 255, 255, 0.18) 21%,
+      rgba(255, 255, 255, 0.04) 34%,
+      rgba(255, 255, 255, 0) 50%
+    ),
+    linear-gradient(
+      97deg,
+      rgba(0, 0, 0, 0) 40%,
+      rgba(0, 0, 0, 0.22) 68%,
+      rgba(0, 0, 0, 0.38) 100%
+    ),
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 70%, rgba(0, 0, 0, 0.22) 100%),
+    var(--grain-metal),
+    var(--grain-metal-coarse),
+    linear-gradient(var(--metal-lo), var(--metal-lo));
+  background-repeat: no-repeat, no-repeat, no-repeat, repeat, repeat, no-repeat;
+  /* Plain alpha compositing (normal) for every layer — no blend-mode
+     math. background-blend-mode: screen looked right in every
+     automated/headless test this session, but silently failed to
+     render at all on a real GPU-compositing browser (the exact same
+     failure mode we hit earlier with `filter` + text-clip). Normal
+     alpha-over is compositor-independent and gives a near-identical
+     look for a translucent light layer on a dark base anyway. */
+  background-blend-mode: normal, normal, normal, normal, normal, normal;
+  /* Small, tight radius — a rectangular machined housing, not a soft
+     rounded app card. */
+  border-radius: 6px;
+  /* Chamfered metal edge with real thickness, not just a 1px outline:
+     a sharp bright line right at the top/left edge (ref edge streak
+     ~rgb(218) against the darker frame face), backed by a wider soft
+     lit band a few px deep so the chamfer face itself reads as having
+     width; mirrored dark line + dark band on the bottom/right. Same
+     upper-left light source as the streak layer above. Plus ambient
+     drop shadows so the housing sits proud of the page. */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    inset 1px 0 0 rgba(255, 255, 255, 0.4),
+    inset 0 3px 5px rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.9),
+    inset -1px 0 0 rgba(0, 0, 0, 0.7),
+    inset 0 -4px 6px rgba(0, 0, 0, 0.4),
+    /* Picture-frame chamfer band ~2% of panel width in from the edge,
+       as in the reference: a slightly lifted band, delimited by a crisp
+       dark line + light line pair at its inner boundary. Spread-based
+       inset shadows stack: the 30px layer tints the whole band, the
+       31/32px layers form the two-tone inner edge. */
+    inset 0 0 0 30px rgba(255, 255, 255, 0.045),
+    inset 0 0 0 31px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 32px rgba(255, 255, 255, 0.09),
+    4px 6px 14px rgba(0, 0, 0, 0.6),
+    0 14px 34px rgba(0, 0, 0, 0.55);
+}
+
 /* ── LITRES label ────────────────────────────────────────────── */
 
 .pump-label {
-  color: #f5f5f5;
+  /* Bright near-white silver — sampled numeral fill in the reference is
+     rgb(~247,246,246), not a mid-gray silver, so the label (explicitly
+     meant to match the numerals' metal tone) is brightened to match
+     rather than using the frame's own darker gunmetal tone. */
+  /* Bright white per the brief's #f2f2f2-#ffffff band — NOT gray/silver
+     toned; all emboss shading below is pure light/dark over this white,
+     never a hue shift. */
+  color: #f2f2f2;
   /* Arial Black over Archivo Black: checked against the reference
      letterforms specifically (the "1"'s top-left flag, the tight
      sharp-terminal bowls on 8/9/5) and Arial Black is the closer
@@ -74,58 +232,93 @@
   font-weight: 900;
   /* Significantly bigger (was clamp(18px, 4vh, 80px)) — a dominant
      title spanning a large portion of the panel width, not a caption. */
-  font-size: clamp(28px, 9vh, 160px);
+  font-size: clamp(28px, 10.5vh, 170px);
   letter-spacing: clamp(0px, 0.12vw, 3px);
-  /* Raised-lettering emboss: a tight dark contact shadow plus a
-     stronger cast shadow (deepened alongside the size increase so the
-     emboss still reads clearly at the larger scale), no gradient fill
-     — flat, bright, near-white per spec. */
+  /* TIGHT raised-lettering emboss. em units, not vh: the previous
+     vh-scaled values put the cast shadow ~10-16px below the glyphs at
+     full-screen size — exactly the "white text with a distant drop
+     shadow" failure the brief calls out. 0.015em on this ~0.1em-stroke
+     face is ~1.5-2px at render size: a dark contact shadow that visibly
+     touches the down-right edge of every letterform, plus a subtle 1px
+     light rim up-left. Same upper-left light source as the panel bevel
+     and streak. */
   text-shadow:
-    0 0.35vh 0 rgba(0, 0, 0, 0.65),
-    0 1vh 1.6vh rgba(0, 0, 0, 0.55);
+    -0.01em -0.01em 0 rgba(255, 255, 255, 0.35),
+    0.015em 0.02em 0.015em rgba(0, 0, 0, 0.9),
+    0.02em 0.035em 0.03em rgba(0, 0, 0, 0.45);
 }
 
 /* ── Drum recess housing ─────────────────────────────────────── */
 
 .pump-display {
+  position: relative;
+  /* Scopes ::after's z-index locally (position alone does not create a
+     stacking context — see the .comma stacking-context bug this project
+     already hit once). */
+  z-index: 0;
   width: 100%;
+  /* This is now just the inner lip's own thickness — the panel's bezel
+     surface is .pump-panel's padding (above). Sized to be a visibly
+     distinct band around the digit group, not the whole frame width. */
+  padding: 0.9vh 0.7vw;
+  box-sizing: border-box;
+  /* The lip is dark metal, matching the reference's own measured
+     values right at this transition (rgb ~16-35, i.e. barely lighter
+     than the black digit wells it leads into) — not a bright fill. Its
+     "metallic" read comes entirely from the thin highlight/shadow bevel
+     lines below, plus the grain continuing across it. Darkened further
+     and picked up the second (coarse) grain layer to match .pump-panel's
+     blackened-steel tone and non-repeating texture. */
   background-image:
-    radial-gradient(
-      100% 140% at 15% -10%,
-      rgba(255, 255, 255, 0.05),
-      transparent 50%
-    ),
-    var(--grain), linear-gradient(155deg, #171410 0%, var(--window) 60%);
-  background-repeat: no-repeat, repeat, no-repeat;
-  /* Plain alpha compositing (normal) for every layer — no blend-mode
-     math. background-blend-mode: screen looked right in every
-     automated/headless test this session, but silently failed to
-     render at all on a real GPU-compositing browser (the exact same
-     failure mode we hit earlier with `filter` + text-clip). Normal
-     alpha-over is compositor-independent and gives a near-identical
-     look for a translucent light layer on a dark base anyway. */
+    var(--grain-metal), var(--grain-metal-coarse),
+    linear-gradient(155deg, #17181a 0%, #0a0b0c 100%);
+  background-repeat: repeat, repeat, no-repeat;
   background-blend-mode: normal, normal, normal;
-  /* Halved (4px -> 2px) so this reads as a rectangular industrial
-     housing rather than a soft rounded card. */
-  border-radius: 2px;
+  /* Matches .pump-panel's outer radius character (see that rule) —
+     both a small, tight radius rather than one sharp/one soft. */
+  border-radius: 6px;
   overflow: hidden;
-  /* Deeper, stepped bezel to read as thick cut material rather than a
-     thin outline: lip highlight -> dark groove -> bevel-face highlight
-     -> dark outer groove -> ambient drop shadow. */
+  /* Real bevel on this inner edge too: a thin bright lip-highlight top
+     and left, a dark groove bottom and right, before the black digit
+     recess starts — a visible transition edge per the reference's own
+     chamfered-lip close-up, not a flat cutout straight from metal to
+     black. */
   box-shadow:
-    inset 0 14px 40px rgba(0, 0, 0, 1),
-    inset 0 -6px 20px rgba(0, 0, 0, 0.9),
-    inset 10px 0 22px rgba(0, 0, 0, 0.65),
-    inset -10px 0 22px rgba(0, 0, 0, 0.65),
-    /* Each ring now carries a bit of blur so it feathers into its
-       neighbour — a soft ambient-occlusion-style falloff at the
-       housing-to-window transition, like the reference, rather than
-       the crisp CAD-line edges a 0-blur spread-only ring gives. */
-    0 0 3px 2px rgba(255, 255, 255, 0.08),
-    0 0 4px 7px #0a0908,
-    0 0 3px 9px rgba(255, 255, 255, 0.05),
-    0 0 5px 13px #050403,
-    0 8px 24px rgba(0, 0, 0, 0.7);
+    inset 1px 1px 0 rgba(255, 255, 255, 0.4),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.8),
+    inset 0 6px 14px rgba(0, 0, 0, 0.7),
+    inset 0 -3px 10px rgba(0, 0, 0, 0.6);
+}
+
+/* Cavity shadow painted ON TOP of the drum wells. The recess depth
+   can't come from inset box-shadows on this element or the wells —
+   inset shadows paint below children, so none of them ever darken the
+   drums themselves; that's why previous "deepen the recess" rounds
+   using box-shadow alone kept reading flat. This overlay is a real
+   top-layer element: a strong shadow curtain falling from the top
+   inner wall (where the lip blocks the upper-left light), lighter
+   bounce at the bottom, and soft side walls. */
+.pump-display::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  /* Curtain strengths chosen together with .digit-overlay's dips: their
+     PRODUCT is what darkens the dead zones, and a first cut (0.85 here)
+     multiplied out to rendered rgb(1) — it erased the peek slivers
+     completely, repeating the earlier blacked-out-peek regression.
+     These values leave the slivers at a dim luma ~30-55 (sampled). */
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.5) 0%,
+      rgba(0, 0, 0, 0.25) 5%,
+      rgba(0, 0, 0, 0) 12%
+    ),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0) 8%),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 4%),
+    linear-gradient(270deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 4%);
 }
 
 .display-digits {
@@ -140,6 +333,22 @@
      to the full panel width/height, matching the reference's density. */
   padding: 0.6vh 0.25vw;
   box-sizing: border-box;
+  /* No background of its own (was a bright steel fill — wrong: sampled
+     seam pixels in the reference between the "1" and "8" wells read
+     rgb(24-66), dark charcoal, not silver). .pump-display's dark lip
+     background behind this shows through the hairline gaps instead, so
+     seams between digits and between comma-groups stay dark. */
+  /* Raised-lip rim right at the metal-to-black opening: a hairline ring
+     plus a brighter line along the bottom rim and a dark line along the
+     top rim (the reference's lip catches the light on its bottom inner
+     face and shadows the top one — consistent with the same upper-left
+     source as everything else). Non-inset shadows on this box paint
+     OUTWARD onto .pump-display's lip band, exactly at the transition
+     edge. */
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.16),
+    0 2px 1px rgba(255, 255, 255, 0.28),
+    0 -2px 1px rgba(0, 0, 0, 0.85);
 }
 
 /* ── Individual drum slots ───────────────────────────────────── */
@@ -161,13 +370,28 @@
   /* Square corners — reference reads as fully rectangular. */
   border-radius: 0;
   /* Dark shadow at the top edge, subtle light highlight at the bottom
-     edge — inverted from the previous top-highlight treatment — per
-     the new reference's "physical well" spec. */
+     edge — inverted from a plain top-highlight treatment because this
+     is a concave recess, not a raised bevel: the rim above casts a
+     shadow onto the top inner wall, while the bottom inner wall catches
+     bounced light, under the same top-left-dominant source as every
+     other effect on this panel.
+     Deepened this round (larger blur/spread, darker top shadow) so the
+     well reads as a genuinely deep cavity rather than a shallow dark
+     rectangle — the previous 8px/10px top shadow was noticeably shallower
+     than the reference's own well depth. Pulled back slightly from an
+     earlier, even stronger version of this same shadow (26px/30px/full
+     opacity) — that fully blacked out the top dead zone on top of
+     .digit-overlay's own darkening there, erasing the new peeking-digit
+     slivers (item 2) entirely; confirmed by disabling both this
+     box-shadow and the overlay and finding the peek geometry itself was
+     fine underneath. This still reads clearly deeper than the pre-this-
+     round value, just not deep enough to double up with the overlay and
+     black out the peek. */
   box-shadow:
-    inset 16px 0 26px rgba(0, 0, 0, 1),
-    inset -16px 0 26px rgba(0, 0, 0, 1),
-    inset 0 8px 10px rgba(0, 0, 0, 0.9),
-    inset 0 -2px 4px rgba(255, 255, 255, 0.16),
+    inset 22px 0 34px rgba(0, 0, 0, 1),
+    inset -22px 0 34px rgba(0, 0, 0, 1),
+    inset 0 14px 16px -4px rgba(0, 0, 0, 0.85),
+    inset 0 -4px 8px rgba(255, 255, 255, 0.14),
     /* Outer edge highlight/shadow pair so the housing strip between two
        slots reads as a raised rib catching light, not a flat gap. */
     1px 0 0 rgba(255, 255, 255, 0.06),
@@ -191,45 +415,116 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Breathing room so the numeral doesn't sit edge-to-edge in its
-     well — box-sizing:border-box keeps the cell's own height/flex
-     sizing unaffected, this only insets the glyph horizontally. */
-  padding: 0 clamp(2px, 0.35vw, 10px);
+  /* Real margin so the numeral sits at ~68% of the well's width, not
+     edge-to-edge — percentage padding on a flex item resolves against
+     .digit-strip's (i.e. the well's) width, so this is a true fraction
+     of the well regardless of viewport size, not a small fixed px/vw
+     clamp that a wide font can still fill completely. */
+  padding: 0 10%;
   box-sizing: border-box;
-  /* Arial Black over Archivo Black: checked against the reference
-     letterforms specifically (the "1"'s top-left flag, the tight
-     sharp-terminal bowls on 8/9/5) and Arial Black is the closer
-     match — Archivo Black's terminals are noticeably rounder. It's
-     also a genuine black-weight font file present on every mainstream
-     OS already, so no web-font network dependency (relevant for a
-     kiosk install) and no risk of the browser synthesizing a fake
-     bold from a lighter weight if a web font fails to load. */
-  font-family: 'Arial Black', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  font-weight: 900;
-  /* font scales with the cell height, clamped so it never overflows.
-     Nudged down slightly (was 0.85) alongside the new padding above,
-     so wide glyphs (0, 8) reliably clear it rather than still
-     touching the cell edges regardless of the padding value. */
-  font-size: calc(var(--window-h) * var(--cell-ratio) * 0.8);
-  /* Solid bright white rather than the previous gradient-clip fill —
-     both because the spec explicitly wants flat high-contrast white,
-     not off-white/gray, and because a solid fill is the more reliable
-     technique (the gradient-clip approach has a documented history of
-     rendering inconsistently on real GPU-compositing browsers). */
-  color: #f5f5f5;
-  /* Embossed/raised glyph: dark offset shadow down-right (contact +
-     soft cast), plus a subtle light highlight up-left, so the numeral
-     looks three-dimensional independent of the well behind it. Safe
-     to stack a highlight layer here because this is plain text-shadow
-     on a solid `color` fill, not combined with background-clip:text —
-     that specific combination is what broke on real GPU compositing
-     earlier this session; solid-fill + text-shadow has tested reliably
-     the whole time. */
+  /* Arial Narrow 700, checked glyph-by-glyph against the reference
+     (which is clearly a CONDENSED bold grotesque — its digit cap-height
+     to width ratio measures ~2.1, vs ~1.7 for regular-width faces):
+     "1" keeps its small top-left flag, "4" has the open apex (Arial
+     Black closes it into a solid triangle — the reason that face was
+     dropped earlier), "7" a straight diagonal, "0" a condensed oval
+     with a clearly open counter — not circular/bubbly, and 700 in the
+     Narrow cut is a moderate bold, not a black weight. A specimen of
+     Arial Narrow/Avenir Next Condensed/Helvetica/Arial/Verdana was
+     rendered side-by-side against the mockup before choosing. System
+     font on macOS + Windows — no web-font dependency for the kiosk. */
+  font-family: 'Arial Narrow', 'Avenir Next Condensed', Arial, sans-serif;
+  font-weight: 700;
+  /* 0.75 of the cell with 10% side padding puts the widest digit ink
+     ("0") at ~70% of the well width and narrower ones around 60-65%
+     (measured) — visible margin both sides, never scaled/stretched to
+     fill. The extra height over the earlier 0.68 also closes some of
+     the vertical-presence gap vs the reference without exceeding the
+     brief's 60-70% width band. */
+  font-size: calc(var(--window-h) * var(--cell-ratio) * 0.75);
+  /* Bright white per the brief (and the reference's own sampled numeral
+     fill, rgb ~246) — not gray/silver. Solid fill + text-shadow only:
+     gradient/background-clip fills have a documented GPU-compositing
+     failure history on this project. */
+  color: #f4f4f3;
+  /* TIGHT emboss, em-scaled (~1.5-2px contact shadow at render size,
+     touching the glyph edge, plus a subtle up-left light rim and a
+     short extrude falloff) — same treatment and same upper-left light
+     source as the LITRES label. The previous vh-based values put the
+     second shadow ~9px off the glyph at full-screen size — the exact
+     "white text with a distant drop-shadow" failure the brief bans. */
   text-shadow:
-    0.22vh 0.4vh 0.06vh rgba(0, 0, 0, 0.4),
-    0.45vh 0.85vh 0.25vh rgba(0, 0, 0, 0.3),
-    -0.12vh -0.15vh 0 rgba(255, 255, 255, 0.45);
+    -0.007em -0.009em 0 rgba(255, 255, 255, 0.5),
+    0.008em 0.012em 0.007em rgba(0, 0, 0, 0.85),
+    0.014em 0.022em 0.016em rgba(0, 0, 0, 0.45);
 }
+
+/* Thin slivers of the adjacent digit values, visible only in the top/
+   bottom dead zones. Deliberately NOT the same box as .digit-cell: a
+   box that size, centred, was tried first and failed — the glyph's own
+   empty vertical margin (centering a ~62%-of-cell-height glyph leaves
+   ~28% empty top/bottom) is bigger than the 15%-of-window dead zone
+   itself, so nothing ever reached the edge to peek (confirmed by
+   temporarily disabling .digit-overlay and .digit-window's box-shadow
+   entirely and still seeing nothing there — it wasn't a darkness
+   problem, it was a geometry problem). These boxes are sized to the
+   dead zone itself, with the glyph pinned to the box's OUTER edge
+   (flex-end for the above-peek, flex-start for the below-peek) so it
+   overflows past the box into the dead zone rather than sitting
+   centred and out of reach — .digit-window's own overflow:hidden does
+   the actual cropping. */
+.digit-peek {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: var(--top-pct);
+  display: flex;
+  justify-content: center;
+  padding: 0 10%;
+  box-sizing: border-box;
+  /* Same face/size as .digit-cell so a sliver lines up with the digit
+     that will roll into place. */
+  font-family: 'Arial Narrow', 'Avenir Next Condensed', Arial, sans-serif;
+  font-weight: 700;
+  font-size: calc(var(--window-h) * var(--cell-ratio) * 0.75);
+  /* Dimmer than the in-focus digits by design — the sliver sits in the
+     drum's shadowed curve (ref slivers sample at luma ~20-40), and a
+     dimmer ink lets the shadow layers above stay moderate instead of
+     stacking to full black and erasing the sliver. */
+  color: #c0c0be;
+  /* Receding-from-focus blur on the sliver (brief: 1-2px, vertical
+     softening). Plain filter:blur on a solid-fill text node — no
+     background-clip anywhere near it, so it avoids this project's
+     documented filter+text-clip GPU-compositing failure. */
+  filter: blur(1.5px);
+}
+
+/* Sliver sizing is measured, not derived: the glyph's own descent gap
+   already keeps its ink ~35px shy of the above-peek's line-box bottom,
+   so with NO translate the visible ink sliver is ~28px (~6% of the
+   window) — a 50% translate pushed the ink entirely out of the window
+   (sampled max luma 0-5, i.e. invisible). The below-peek's ink starts
+   at its line-box top, so that one DOES need a push-down to read as a
+   sliver rather than a half digit. Both are pure clipping via the
+   window's overflow:hidden — the glyphs are never scaled/squashed. */
+.digit-peek-above {
+  top: 0;
+  align-items: flex-end;
+}
+
+.digit-peek-below {
+  bottom: 0;
+  align-items: flex-start;
+  /* No translate here either: the line-box's half-leading + ascent-to-
+     cap gap already push the ink ~30px below the box top, leaving a
+     ~34px sliver — measured; a 35% translate left ~11px of ink in the
+     overlay's darkest edge band, sampling as invisible (luma ≤9). */
+}
+
+/* (.digit-reflection removed — see the comment in DigitWheel.jsx: it
+   shared the bottom dead zone with .digit-peek-below and the two
+   overlapping glyphs produced the garbled-reflection failure the brief
+   forbids; the reference shows no reflection there either.) */
 
 /*
  * Cylinder gradient overlay.
@@ -255,27 +550,36 @@
     /* Distinct dark curves at the very top and bottom — elliptical,
        anchored right at each edge, rather than a flat linear fade —
        so each well reads as a wheel curving away, not a generic
-       vignette. The percentage stops are the same falloff the
-       previous (working, no-ghosting) linear version used, just
-       re-expressed relative to this ellipse's own 30%-of-height
-       radius instead of window height directly — e.g. 16% of the
-       window is 53% of a 30%-tall ellipse. A wider fade (an earlier
-       attempt used 72%) doesn't fully darken the strip's dead zone by
-       the point the current digit starts, so the *next* cell up/down
-       the strip visibly ghosts through — this reaches fully
-       transparent by exactly the 15% dead-zone boundary instead. */
+       vignette. Non-monotonic ("dip") shape this round: previously 0%
+       (the very edge) was the DARKEST point (0.97, near-opaque), which
+       fully hid the adjacent digit in the strip rather than letting it
+       peek through — there was a real adjacent-digit cell sitting right
+       there the whole time, just fully covered. Now the edge itself is
+       only partly darkened (0.4) so a thin sliver of that neighbour
+       shows, darkness peaks a little further in (0.72 at 20%, simulating
+       the drum curving away from the light), then falls back off through
+       the same 53%/80%/100% stops as before — that anti-ghosting falloff
+       (chosen so the *next* cell up/down doesn't bleed into the current
+       digit's own clear zone) is unchanged. */
+    /* Deepened this round to match the reference's near-black dead
+       zones (sampled rgb ~7 at the top of a well): the sliver glyphs
+       still read through at a dim luma ~30-70 (checked on rendered
+       pixels, not assumed) because the edge stop is 0.72, not full
+       black — the earlier lesson about fully blacking out the peek is
+       respected by capping the peak at 0.88, not 1.0. Bottom curve is
+       slightly lighter (bounced light, same top-left source). */
     radial-gradient(
       ellipse 90% 30% at 50% 0%,
-      rgba(0, 0, 0, 0.97) 0%,
-      rgba(0, 0, 0, 0.75) 20%,
-      rgba(0, 0, 0, 0.22) 53%,
+      rgba(0, 0, 0, 0.6) 0%,
+      rgba(0, 0, 0, 0.8) 20%,
+      rgba(0, 0, 0, 0.25) 53%,
       rgba(0, 0, 0, 0.05) 80%,
       rgba(0, 0, 0, 0) 100%
     ),
     radial-gradient(
       ellipse 90% 30% at 50% 100%,
-      rgba(0, 0, 0, 0.97) 0%,
-      rgba(0, 0, 0, 0.75) 20%,
+      rgba(0, 0, 0, 0.5) 0%,
+      rgba(0, 0, 0, 0.72) 20%,
       rgba(0, 0, 0, 0.22) 53%,
       rgba(0, 0, 0, 0.05) 80%,
       rgba(0, 0, 0, 0) 100%
@@ -296,34 +600,62 @@
   align-items: flex-end;
   justify-content: center;
   height: var(--window-h);
-  font-family: 'Arial Black', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  font-weight: 900;
-  /* Bigger ratio (was 0.22, then 0.32) to match the digit stroke
-     weight — a bold, chunky mark, not a thin pale one. */
-  font-size: calc(var(--window-h) * var(--cell-ratio) * 0.4);
-  width: clamp(10px, 1.5vw, 30px);
-  /* Tightened (was 0.08) so it sits close against the digit's bottom
-     instead of floating with a visible gap beneath it. */
-  padding-bottom: calc(var(--window-h) * 0.02);
+  /* position:relative alone does NOT create a stacking context (only
+     position + an explicit z-index does) — without this, .comma::before's
+     z-index:-1 wasn't scoped to .comma at all, it escaped to the ROOT
+     stacking context and painted behind .pump-panel/.pump-display's own
+     backgrounds instead of just behind the comma glyph. That let the
+     panel's dark-but-textured metal show straight through the trench
+     (sampled ~rgb(55) instead of the trench's intended ~rgb(11)) — found
+     by checking computed style (said opaque near-black) against the
+     actual rendered pixel (wasn't), not by assuming the CSS was right. */
+  z-index: 0;
+  /* Matches .digit-cell's face/weight, at the SAME font-size as the
+     digits (reference comma height measures ~0.37 of the digit cap
+     height, which is what a comma glyph at equal font-size gives) —
+     a bold chunky mark whose stroke matches the numerals. */
+  font-family: 'Arial Narrow', 'Avenir Next Condensed', Arial, sans-serif;
+  font-weight: 700;
+  font-size: calc(var(--window-h) * var(--cell-ratio) * 0.75);
+  width: clamp(12px, 2vw, 40px);
+  /* Positions the comma tight under the digits' shared baseline (the
+     digits are vertically centred in the window, so their baseline sits
+     ~67% down; the comma hangs just below it, as in the reference).
+     Measured and tuned from rendered output, not derived. */
+  padding-bottom: calc(var(--window-h) * 0.24);
   /* Wider AND deeper gap here (see ::before) — .display-digits'
      hairline gap on the other side keeps this comma sitting tight
      against the preceding digit; this margin plus the trench behind
      it is what reads as a seam between separate wheel assemblies. */
   margin-right: clamp(8px, 1.6vw, 26px);
-  color: #f5f5f5;
+  /* Same bright near-white silver as the numerals/label. */
+  color: #f4f4f3;
+  /* Same tight em-scaled emboss as .digit-cell. */
   text-shadow:
-    0.15vh 0.28vh 0.08vh rgba(0, 0, 0, 0.5),
-    0.3vh 0.55vh 0.3vh rgba(0, 0, 0, 0.35);
+    -0.007em -0.009em 0 rgba(255, 255, 255, 0.5),
+    0.008em 0.012em 0.007em rgba(0, 0, 0, 0.85),
+    0.014em 0.022em 0.016em rgba(0, 0, 0, 0.45);
 }
 
 /* Deep recessed trench behind the comma, matching the digit-wells'
    own dark recess colour with strong inward shadows on both sides —
    reads as a genuine gap between two separate physical wheel
-   assemblies, distinct from the hairline gaps within a group. */
+   assemblies, distinct from the hairline gaps within a group.
+   Right edge extends by .comma's own margin-right (not just a fixed
+   4px) — that margin is the bulk of the visual gap to the next
+   digit-window, and a bug here previously left it uncovered, so it
+   showed .pump-display's dark-but-textured metal lip straight through
+   instead of true black: sampled rendered pixels there read ~rgb(50),
+   clearly lighter than the near-black rgb(11,10,8) this trench is
+   supposed to be, and lighter than the reference's own comma-trench
+   pixels (sampled at rgb ~1-9). */
 .comma::before {
   content: '';
   position: absolute;
-  inset: 0 -4px;
+  top: 0;
+  bottom: 0;
+  left: -4px;
+  right: calc(-4px - clamp(8px, 1.6vw, 26px));
   background: var(--window);
   box-shadow:
     inset 5px 0 9px rgba(0, 0, 0, 0.85),

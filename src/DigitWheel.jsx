@@ -27,6 +27,18 @@ function buildStrip() {
  * starts, instead of being cut off mid-animation.
  */
 function DigitWheel({ digit, resetSignal, tickMs }) {
+  // The values shown peeking above/below the current digit at the very
+  // top/bottom edges of the window. These are NOT read off the scrolling
+  // strip's own natural dead-zone content — at this font size, a cell's
+  // glyph ink stops well short of the cell's own edges (large empty
+  // vertical margin from centering a glyph shorter than the cell), so the
+  // strip's dead zone is provably blank there (verified by disabling the
+  // overlay/shadow that were assumed to be hiding it, and finding nothing
+  // underneath either). Computed explicitly instead — see .digit-peek-*
+  // in App.css for how a peek box's own glyph is deliberately NOT centred
+  // in its box, so ink actually reaches the shared edge with the window.
+  const peekAbove = (digit + 9) % 10
+  const peekBelow = (digit + 1) % 10
   const strip = useMemo(buildStrip, [])
   const [pos, setPos] = useState(0)
   const [transitionOn, setTransitionOn] = useState(true)
@@ -86,6 +98,12 @@ function DigitWheel({ digit, resetSignal, tickMs }) {
 
   return (
     <div className="digit-window">
+      {/* Thin slivers of the neighbouring digits at the very top/bottom
+          edges, selling the curved-drum illusion. See the peekAbove/
+          peekBelow comment above and .digit-peek-* in App.css. */}
+      <div className="digit-peek digit-peek-above" aria-hidden="true">
+        {peekAbove}
+      </div>
       <div
         className="digit-strip"
         style={{
@@ -101,6 +119,15 @@ function DigitWheel({ digit, resetSignal, tickMs }) {
           </div>
         ))}
       </div>
+      <div className="digit-peek digit-peek-below" aria-hidden="true">
+        {peekBelow}
+      </div>
+      {/* No reflection element: a mirrored-digit reflection was tried
+          here and occupied the same bottom dead zone as .digit-peek-below
+          — the two glyphs overlapped into exactly the garbled/mismatched
+          shapes the design brief calls out as a known failure, and the
+          reference mockup shows no reflection in the wells anyway. The
+          brief explicitly prefers no reflection over a broken one. */}
       {/* Gradient overlay: simulates the cylinder curving away at top/bottom */}
       <div className="digit-overlay" />
     </div>

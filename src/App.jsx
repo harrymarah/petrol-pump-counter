@@ -38,8 +38,17 @@ for (let k = 1; k <= RAMP_TICKS; k++) {
 const MAX_RATE = REAL_TARGET / (0.75 * (rampFactorSum + (totalTicks - RAMP_TICKS)))
 const MAX_VALUE = 10 ** DIGIT_COUNT - 1
 
+// Dev/verification affordance: ?value=1234567890 renders the counter
+// frozen at that number so every glyph shape can be checked against the
+// design reference at once. Ignored (starts at 0) when absent/invalid.
+function initialValue() {
+  const raw = new URLSearchParams(window.location.search).get('value')
+  const n = raw === null ? NaN : Number(raw)
+  return Number.isInteger(n) && n >= 0 && n <= MAX_VALUE ? n : 0
+}
+
 function App() {
-  const [value, setValue] = useState(0)
+  const [value, setValue] = useState(initialValue)
   const [running, setRunning] = useState(false)
   const [resetSignal, setResetSignal] = useState(0)
   const intervalRef = useRef(null)
@@ -84,24 +93,26 @@ function App() {
 
   return (
     <div className="pump">
-      <div className="pump-label">LITRES</div>
+      <div className="pump-panel">
+        <div className="pump-label">LITRES</div>
 
-      <div className="pump-display">
-        <div className="display-digits">
-          {digits.map((digit, i) => (
-            // Each digit-window and each comma is its own flex item here —
-            // deliberately NOT nested together in a shared wrapper. Nesting
-            // them meant a slot with a comma had to share its flex:1 share
-            // with that comma, making that digit-window narrower than the
-            // 7 slots with no comma. Flat siblings means every digit-window
-            // gets an equal share regardless of neighboring commas.
-            <Fragment key={i}>
-              <span className="digit-slot">
-                <DigitWheel digit={digit} resetSignal={resetSignal} tickMs={TICK_MS} />
-              </span>
-              {COMMA_AFTER.includes(i) && <span className="comma">,</span>}
-            </Fragment>
-          ))}
+        <div className="pump-display">
+          <div className="display-digits">
+            {digits.map((digit, i) => (
+              // Each digit-window and each comma is its own flex item here —
+              // deliberately NOT nested together in a shared wrapper. Nesting
+              // them meant a slot with a comma had to share its flex:1 share
+              // with that comma, making that digit-window narrower than the
+              // 7 slots with no comma. Flat siblings means every digit-window
+              // gets an equal share regardless of neighboring commas.
+              <Fragment key={i}>
+                <span className="digit-slot">
+                  <DigitWheel digit={digit} resetSignal={resetSignal} tickMs={TICK_MS} />
+                </span>
+                {COMMA_AFTER.includes(i) && <span className="comma">,</span>}
+              </Fragment>
+            ))}
+          </div>
         </div>
       </div>
 
