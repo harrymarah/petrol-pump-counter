@@ -174,24 +174,6 @@
     -1px 0 0 rgba(0, 0, 0, 0.5);
 }
 
-/* Cropped trailing digit: an opaque mask over the right portion of the
-   LAST digit-window only, matching the recess colour. This is
-   deliberately a mask, not a narrower flex-basis on the slot — an
-   earlier version shrank the whole slot (flex: 0.55), which shrank
-   .digit-strip's own coordinate space (it's width:100% of its
-   containing block) and read as the glyph being horizontally squashed
-   rather than cleanly cropped. Every digit-window keeps identical,
-   unmodified internal layout; this purely occludes part of the last
-   one, so the glyph renders at the exact same size/proportion as
-   every other digit and is simply hidden behind the mask, not scaled. */
-.digit-slot:last-child .digit-window::after {
-  content: '';
-  position: absolute;
-  inset: 0 0 0 52%;
-  background: var(--cell);
-  z-index: 2;
-}
-
 .digit-strip {
   position: absolute;
   /*
@@ -209,6 +191,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Breathing room so the numeral doesn't sit edge-to-edge in its
+     well — box-sizing:border-box keeps the cell's own height/flex
+     sizing unaffected, this only insets the glyph horizontally. */
+  padding: 0 clamp(2px, 0.35vw, 10px);
+  box-sizing: border-box;
   /* Arial Black over Archivo Black: checked against the reference
      letterforms specifically (the "1"'s top-left flag, the tight
      sharp-terminal bowls on 8/9/5) and Arial Black is the closer
@@ -219,8 +206,11 @@
      bold from a lighter weight if a web font fails to load. */
   font-family: 'Arial Black', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   font-weight: 900;
-  /* font scales with the cell height, clamped so it never overflows */
-  font-size: calc(var(--window-h) * var(--cell-ratio) * 0.85);
+  /* font scales with the cell height, clamped so it never overflows.
+     Nudged down slightly (was 0.85) alongside the new padding above,
+     so wide glyphs (0, 8) reliably clear it rather than still
+     touching the cell edges regardless of the padding value. */
+  font-size: calc(var(--window-h) * var(--cell-ratio) * 0.8);
   /* Solid bright white rather than the previous gradient-clip fill —
      both because the spec explicitly wants flat high-contrast white,
      not off-white/gray, and because a solid fill is the more reliable
