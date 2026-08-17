@@ -1,7 +1,14 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
 
 // Number of times the 0-9 sequence repeats in the scrolling strip.
-const REPEATS = 40
+// Dropped 40 -> 12 for paint/JS cost: 400 cells per wheel (4000 total)
+// made every tick's React reconciliation + repaint heavy enough to hold
+// the page under ~35fps even with all text-shadows disabled (measured).
+// The cost of a shorter strip is more frequent wrap-folds; a fold
+// replaces one 120ms roll with an instant snap, which at this tick rate
+// is hard to spot, and 12 repeats still makes folds rare per run
+// (fold threshold is STRIP_LENGTH - 30, see the wrap logic below).
+const REPEATS = 12
 const STRIP_LENGTH = REPEATS * 10
 
 // The visible window is 1/0.7 × the cell height (i.e. cell fills 70 % of the
