@@ -1,5 +1,11 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
 
+// Duration of the animated roll-back-to-zero on reset. One shared
+// duration for every wheel (rather than per-distance speed) so all the
+// drums arrive at 0 in the same moment. Ease-in-out: the drum assembly
+// spins up, sweeps, and settles — no hard stop.
+const HOME_ROLL_MS = 900
+
 // Number of times the 0-9 sequence repeats in the scrolling strip.
 // Dropped 40 -> 12 for paint/JS cost: 400 cells per wheel (4000 total)
 // made every tick's React reconciliation + repaint heavy enough to hold
@@ -49,6 +55,9 @@ function DigitWheel({ digit, resetSignal, tickMs }) {
   const strip = useMemo(buildStrip, [])
   const [pos, setPos] = useState(0)
   const [transitionOn, setTransitionOn] = useState(true)
+  // True while the wheel is doing the slow reset rewind — swaps the
+  // per-tick transition for the longer HOME_ROLL_MS one below.
+  const [homeRoll, setHomeRoll] = useState(false)
   const prevDigit = useRef(0)
   const prevReset = useRef(resetSignal)
   // Set synchronously alongside the pos update it belongs to, then
@@ -60,13 +69,22 @@ function DigitWheel({ digit, resetSignal, tickMs }) {
     if (prevReset.current !== resetSignal) {
       prevReset.current = resetSignal
       prevDigit.current = digit
-      pendingSkipRef.current = true
-      setPos(0)
+      // Animated rewind, not a snap: roll BACKWARD to the nearest zero
+      // at or below the current position (strip[i] === i % 10, so
+      // that's just current - current%10 — for a wheel showing "7"
+      // that's seven cells back). All wheels share the same duration,
+      // so they sweep at different speeds and land on 0 together, like
+      // a real odometer reset lever. pos stays a multiple of 10 —
+      // still on a cell boundary, so the sharpness guarantee holds.
+      setHomeRoll(true)
+      setPos((current) => current - (current % 10))
       return
     }
 
     if (digit === prevDigit.current) return
     prevDigit.current = digit
+    // A normal forward step ends any lingering rewind styling.
+    setHomeRoll(false)
 
     setPos((current) => {
       // Keep the physical strip index bounded to the 400 rendered cells.
@@ -117,7 +135,11 @@ function DigitWheel({ digit, resetSignal, tickMs }) {
           // Percentage positions the strip so digit `pos` is at the window top;
           // the pixel offset then shifts it down to centre it in the window.
           transform: `translateY(-${pos * (100 / STRIP_LENGTH)}%)`,
-          transition: transitionOn ? `transform ${tickMs}ms ease-out` : 'none',
+          transition: !transitionOn
+            ? 'none'
+            : homeRoll
+              ? `transform ${HOME_ROLL_MS}ms cubic-bezier(0.45, 0, 0.25, 1)`
+              : `transform ${tickMs}ms ease-out`,
         }}
       >
         {strip.map((d, i) => (
