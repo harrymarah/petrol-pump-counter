@@ -244,15 +244,17 @@
      shadow comes only after the wall, so it stays connected. Up-left
      white rim = the face's lit bevel edge, same top-left light source
      as everything else. */
+  /* Depth pulled back ~40% from the first slab pass (Harry: full depth
+     read as floating CG lettering) — still a real wall, just a shallow
+     one, with the ramp reaching its dark end sooner so the slab stays
+     grounded. */
   text-shadow:
     -0.008em -0.01em 0 rgba(255, 255, 255, 0.55),
-    0.006em 0.008em 0 #cfcfcd,
-    0.012em 0.016em 0 #b8b8b6,
-    0.018em 0.024em 0 #a0a09e,
-    0.024em 0.032em 0 #868684,
-    0.03em 0.04em 0 #6b6b69,
-    0.036em 0.048em 0 #4f4f4d,
-    0.05em 0.068em 0.05em rgba(0, 0, 0, 0.8);
+    0.006em 0.008em 0 #c6c6c4,
+    0.012em 0.016em 0 #a4a4a2,
+    0.018em 0.024em 0 #7c7c7a,
+    0.022em 0.03em 0 #565654,
+    0.032em 0.046em 0.04em rgba(0, 0, 0, 0.75);
 }
 
 /* ── Drum recess housing ─────────────────────────────────────── */
@@ -489,17 +491,16 @@
   color: #f4f4f3;
   /* Slab extrusion, same solid-step side-wall technique as .pump-label
      (see that rule's comment for why blurred shadows kept reading
-     flat): ~0.033em of graded gray wall (~8px at Harry's viewport
-     digit size) + cast shadow after it. */
+     flat): ~0.02em of graded gray wall (~5px at Harry's viewport digit
+     size — pulled back from 0.033em with him: the deeper wall read as
+     floating CG lettering) + cast shadow after it. */
   text-shadow:
     -0.007em -0.009em 0 rgba(255, 255, 255, 0.6),
-    0.0055em 0.007em 0 #cfcfcd,
-    0.011em 0.014em 0 #b8b8b6,
-    0.0165em 0.021em 0 #a0a09e,
-    0.022em 0.028em 0 #868684,
-    0.0275em 0.035em 0 #6b6b69,
-    0.033em 0.042em 0 #4f4f4d,
-    0.046em 0.06em 0.045em rgba(0, 0, 0, 0.75);
+    0.005em 0.0065em 0 #c6c6c4,
+    0.01em 0.013em 0 #a4a4a2,
+    0.015em 0.0195em 0 #7c7c7a,
+    0.02em 0.026em 0 #565654,
+    0.03em 0.04em 0.035em rgba(0, 0, 0, 0.7);
 }
 
 /* Thin slivers of the adjacent digit values, visible only in the top/
@@ -678,13 +679,11 @@
   /* Same slab extrusion as .digit-cell. */
   text-shadow:
     -0.007em -0.009em 0 rgba(255, 255, 255, 0.6),
-    0.0055em 0.007em 0 #cfcfcd,
-    0.011em 0.014em 0 #b8b8b6,
-    0.0165em 0.021em 0 #a0a09e,
-    0.022em 0.028em 0 #868684,
-    0.0275em 0.035em 0 #6b6b69,
-    0.033em 0.042em 0 #4f4f4d,
-    0.046em 0.06em 0.045em rgba(0, 0, 0, 0.75);
+    0.005em 0.0065em 0 #c6c6c4,
+    0.01em 0.013em 0 #a4a4a2,
+    0.015em 0.0195em 0 #7c7c7a,
+    0.02em 0.026em 0 #565654,
+    0.03em 0.04em 0.035em rgba(0, 0, 0, 0.7);
 }
 
 /* Deep recessed trench behind the comma, matching the digit-wells'
