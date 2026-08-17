@@ -249,12 +249,12 @@
      one, with the ramp reaching its dark end sooner so the slab stays
      grounded. */
   text-shadow:
-    -0.008em -0.01em 0 rgba(255, 255, 255, 0.55),
-    0.006em 0.008em 0 #c6c6c4,
-    0.012em 0.016em 0 #a4a4a2,
-    0.018em 0.024em 0 #7c7c7a,
-    0.022em 0.03em 0 #565654,
-    0.032em 0.046em 0.04em rgba(0, 0, 0, 0.75);
+    -0.004em -0.005em 0 rgba(255, 255, 255, 0.3),
+    0.006em 0.008em 0 #b4b4b2,
+    0.012em 0.016em 0 #989896,
+    0.018em 0.024em 0 #747472,
+    0.022em 0.03em 0 #525250,
+    0.032em 0.046em 0.018em rgba(0, 0, 0, 0.7);
 }
 
 /* ── Drum recess housing ─────────────────────────────────────── */
@@ -446,14 +446,27 @@
    * top: 15% centres the strip so digit-0 sits in the middle of the window.
    * Derivation: TOP_OFFSET = (1 − CELL_RATIO) / 2 = (1 − 0.7) / 2 = 0.15
    * 15 % of .digit-window height = the pixel TOP_OFFSET for any window size.
+   * Rounded to a whole pixel (fallback first) for the same
+   * layer-resampling reason as .digit-cell's height — the layer's final
+   * offset is this top + the transform, and both must be integral for
+   * the composited strip to stay sharp at rest.
    */
   top: var(--top-pct);
+  top: round(nearest, calc(var(--window-h) * 0.15), 1px);
   left: 0;
   width: 100%;
 }
 
 .digit-cell {
   height: calc(var(--window-h) * var(--cell-ratio));
+  /* Whole-pixel cell height (with the un-rounded calc above as the
+     fallback for engines without round()): the strip's settled
+     translateY is always pos x cellHeight, so an integral cell height
+     makes every resting offset land on a whole pixel. With the strip
+     now on its own compositor layer (will-change), a FRACTIONAL resting
+     offset makes the compositor bilinear-resample the layer — every
+     glyph goes measurably soft (edge transitions widened to ~3px). */
+  height: round(nearest, calc(var(--window-h) * var(--cell-ratio)), 1px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -493,14 +506,18 @@
      (see that rule's comment for why blurred shadows kept reading
      flat): ~0.02em of graded gray wall (~5px at Harry's viewport digit
      size — pulled back from 0.033em with him: the deeper wall read as
-     floating CG lettering) + cast shadow after it. */
+     floating CG lettering) + cast shadow after it.
+     Sharpness pass: NO up-left white rim here (a half-transparent white
+     fringe outside a white glyph reads as glow/soft edge — it widened
+     the measured edge transition to ~3px), first wall step darkened so
+     the face→wall boundary is a crisp jump, and the cast blur tightened
+     and kept clear of the glyph edge. */
   text-shadow:
-    -0.007em -0.009em 0 rgba(255, 255, 255, 0.6),
-    0.005em 0.0065em 0 #c6c6c4,
-    0.01em 0.013em 0 #a4a4a2,
-    0.015em 0.0195em 0 #7c7c7a,
-    0.02em 0.026em 0 #565654,
-    0.03em 0.04em 0.035em rgba(0, 0, 0, 0.7);
+    0.005em 0.0065em 0 #b4b4b2,
+    0.01em 0.013em 0 #989896,
+    0.015em 0.0195em 0 #747472,
+    0.02em 0.026em 0 #525250,
+    0.03em 0.04em 0.015em rgba(0, 0, 0, 0.65);
 }
 
 /* Thin slivers of the adjacent digit values, visible only in the top/
@@ -678,12 +695,11 @@
   color: #f4f4f3;
   /* Same slab extrusion as .digit-cell. */
   text-shadow:
-    -0.007em -0.009em 0 rgba(255, 255, 255, 0.6),
-    0.005em 0.0065em 0 #c6c6c4,
-    0.01em 0.013em 0 #a4a4a2,
-    0.015em 0.0195em 0 #7c7c7a,
-    0.02em 0.026em 0 #565654,
-    0.03em 0.04em 0.035em rgba(0, 0, 0, 0.7);
+    0.005em 0.0065em 0 #b4b4b2,
+    0.01em 0.013em 0 #989896,
+    0.015em 0.0195em 0 #747472,
+    0.02em 0.026em 0 #525250,
+    0.03em 0.04em 0.015em rgba(0, 0, 0, 0.65);
 }
 
 /* Deep recessed trench behind the comma, matching the digit-wells'
