@@ -285,9 +285,15 @@
      and the letterforms keep their normal rhythm. */
   font-family: 'Helvetica Neue', 'Segoe UI', Helvetica, Arial, sans-serif;
   font-weight: 300;
-  /* Significantly bigger (was clamp(18px, 4vh, 80px)) — a dominant
-     title spanning a large portion of the panel width, not a caption. */
-  font-size: clamp(28px, 10.5vh, 170px);
+  /* Brought back down (10.5vh -> 7vh, i.e. 109px -> 73px at kiosk size).
+     An earlier round had pushed this up to be "a dominant title
+     spanning a large portion of the panel width, not a caption", but
+     that was sized for Arial Black 900; at the light weight it now
+     carries, that size read as oversized rather than commanding. It is
+     a unit marking on an instrument, and the counter is the thing meant
+     to dominate. Min/max scaled by the same ratio so the clamp still
+     behaves at viewport extremes. */
+  font-size: clamp(18px, 7vh, 112px);
   letter-spacing: clamp(0px, 0.12vw, 3px);
   /* CSS puts the letter-space after the LAST character too, so the word
      sits half a space left of true centre. Barely visible at this
