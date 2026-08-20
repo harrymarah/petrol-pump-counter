@@ -27,54 +27,69 @@
   /* Procedural fractal-noise tile used for the moulded-plastic grain
      visible on the housing surfaces. No raster asset needed. */
   --grain: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='64'%20height='64'%3E%3Cfilter%20id='n'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='1.15'%20numOctaves='2'%20stitchTiles='stitch'/%3E%3CfeColorMatrix%20type='matrix'%20values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.13 0'/%3E%3C/filter%3E%3Crect%20width='64'%20height='64'%20filter='url(%23n)'/%3E%3C/svg%3E");
-  /* Directional fractal-noise tile for the brushed-steel bezel: very low
-     baseFrequency on the x-axis (near-constant along a row) and high
-     baseFrequency on the y-axis (rapid change row-to-row) turns the same
-     turbulence primitive into fine horizontal striations instead of
-     isotropic grain — a real procedural texture, not a flat gradient,
-     and (per the earlier background-blend-mode failure on real GPU
-     compositing, see project memory) composited with plain alpha-over,
-     never a blend-mode. */
-  /* Enlarged from the previous 260x40 tile — at panel scale that tiled
-     ~6x horizontally and ~15x vertically, which read as an obviously
-     repeating pattern at normal viewing size. baseFrequency is kept the
-     same, so stripe density/thickness is unchanged; only the tile's
-     physical size (and so its repeat period) grows. Still one
-     directional (low-x/high-y baseFrequency) turbulence primitive. */
-  --grain-metal: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='980'%20height='170'%3E%3Cfilter%20id='m'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.012%200.55'%20numOctaves='2'%20stitchTiles='stitch'/%3E%3CfeColorMatrix%20type='matrix'%20values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.1 0'/%3E%3C/filter%3E%3Crect%20width='980'%20height='170'%20filter='url(%23m)'/%3E%3C/svg%3E");
+  /* Orange-peel BUMP texture for the bezel — a matte powder-coated
+     black, not brushed steel.
+     Two things changed from the previous directional tile (baseFrequency
+     '0.012 0.55': near-constant along a row, rapid change row-to-row,
+     giving fine horizontal striations):
+     1. ISOTROPIC. The finish reference Harry supplied is a satin black
+        sphere whose grain has no lay direction at all, so both
+        baseFrequency axes are now equal. Measured on the rendered panel
+        the old texture scored 3.35 for anisotropy (vertical
+        neighbour-delta over horizontal); this scores 0.98, which is what
+        "no lay direction" means numerically.
+     2. RELIEF, not flat noise. The reference's grain is clearly bumpy —
+        every grain has a lit top and a shadowed side. A single
+        translucent noise layer can't do that; it only ever lightens, so
+        it reads as dust or film grain sitting ON a flat surface. So the
+        texture is TWO copies of the SAME turbulence field (identical
+        parameters means an identical pattern), one white and one black,
+        offset from each other by a couple of pixels in .pump-panel's
+        background-position — white up-left, black down-right, matching
+        the top-left light source every other effect on this panel uses.
+        Each bump then gets a highlight on the side facing the light and
+        a shadow on the side away from it, which is what relief IS.
+     Feature size and relief depth are both matched by measurement, not
+     by eye — eyeballing got the size backwards twice. Grain period is
+     the mean spacing between local maxima along a scanline: the
+     reference measures 6.65px, and baseFrequency 0.23 puts ours at
+     ~6.7px. Relief depth is the local texture deviation as a percentage
+     of mean luma (a box-blur residual, so broad lighting doesn't count):
+     the reference runs 9% in its shadowed areas and 18.7% under its
+     highlight, and these alphas put ours near the top of that band —
+     the visible orange-peel IS the look being asked for here.
+     Still procedural turbulence, not a raster asset, and still plain
+     alpha-over — never a blend-mode (see project memory:
+     background-blend-mode passed every headless check here and then
+     silently failed on real GPU compositing). */
+  --grain-metal: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='400'%20height='400'%3E%3Cfilter%20id='gh'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.23'%20numOctaves='2'%20stitchTiles='stitch'/%3E%3CfeColorMatrix%20type='matrix'%20values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.1 0'/%3E%3C/filter%3E%3Crect%20width='400'%20height='400'%20filter='url(%23gh)'/%3E%3C/svg%3E");
+  /* The shadow half of the bump pair above: same turbulence parameters,
+     so the same pattern, painted black instead of white. MUST be kept
+     identical to --grain-metal apart from the colour/alpha, or the two
+     fields stop lining up and the relief collapses into mush. */
+  --grain-metal-shadow: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='400'%20height='400'%3E%3Cfilter%20id='gs'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.23'%20numOctaves='2'%20stitchTiles='stitch'/%3E%3CfeColorMatrix%20type='matrix'%20values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.22 0'/%3E%3C/filter%3E%3Crect%20width='400'%20height='400'%20filter='url(%23gs)'/%3E%3C/svg%3E");
   /* A second, independently-sized/frequency layer composited on top of
      --grain-metal. Two textures tiling at different (non-common-multiple)
      periods combine into an effective repeat period equal to their
      LCM — large enough that no repetition is perceptible in the
      viewport, without needing one enormous single texture. This one is
-     coarser and less directional (larger, closer-to-isotropic
-     baseFrequency), adding large-scale mottling so the surface doesn't
-     read as one uniform fine-line pattern either. */
-  --grain-metal-coarse: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='677'%20height='241'%3E%3Cfilter%20id='c'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.045%200.09'%20numOctaves='3'%20stitchTiles='stitch'/%3E%3CfeColorMatrix%20type='matrix'%20values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect%20width='677'%20height='241'%20filter='url(%23c)'/%3E%3C/svg%3E");
-  /* Sampled directly from the reference photo's pixels (not eyeballed):
-     flat panel areas away from any edge/highlight sit around rgb(25-60)
-     — a dark gunmetal, not a bright silver — with brightness confined to
-     thin specular streaks right at bevel edges. See project memory for
-     the sampling coordinates/values this is based on. Pushed darker
-     again this round (blackened/anodized steel, not mid-grey): --metal-lo
-     down to near-black, --metal-hi reserved for edges/streak only. */
-  /* Re-grounded against the current reference mockup's own pixels this
-     round (not the previous near-black pass): flat metal away from the
-     highlight streak samples at luma ~25-65 with the brief specifying a
-     base in the #2a2c2e-#35373a band; the bright zone is a single broad
-     near-vertical streak around x~15% peaking at luma ~110-130, fading
-     to ~25 at the far right. So: a mid-dark gunmetal BASE, with all
-     brightness variation carried by the streak/shade layers on
-     .pump-panel, not by the base color. */
-  --metal-hi: #75787b;
-  --metal-mid: #1c1d1f;
-  /* Harry's 2026-08-17 feedback round: the #2c2e31 spec-band base read
-     as "dark silver/chrome" at real size — pulled much blacker per his
-     direction (overriding the written spec's #2a2c2e-#35373a band).
-     The metal read now comes from the crisp edge lines, grain, and a
-     restrained streak over a near-black base. */
-  --metal-lo: #131517;
-  --metal-edge: #d8d9da;
+     much coarser, adding slow large-scale mottling so the surface reads
+     as a real coated panel rather than one uniform stipple. Isotropic
+     too, for the same reason as the fine tile above. */
+  --grain-metal-coarse: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='677'%20height='677'%3E%3Cfilter%20id='c'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.055'%20numOctaves='3'%20stitchTiles='stitch'/%3E%3CfeColorMatrix%20type='matrix'%20values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.045 0'/%3E%3C/filter%3E%3Crect%20width='677'%20height='677'%20filter='url(%23c)'/%3E%3C/svg%3E");
+  /* The bezel's base colour. All brightness variation is carried by the
+     sheen/shade layers and the bevel lines on .pump-panel, never by this
+     — the panel is ~8:1 width:height and gradients behave badly on that
+     aspect (see the gotcha noted on .pump-panel).
+     History: started mid-gunmetal per a written spec's #2a2c2e-#35373a
+     band, which Harry rejected at real size as reading "dark silver/
+     chrome"; pulled to #131517, and now to #0a0a0a on his "I want the
+     metal to be blacker" round. Also made exactly NEUTRAL: the finish
+     reference he supplied samples at R=G=B (54.2/54.4/54.1 averaged over
+     the sphere), where #131517 carried a slight blue lift.
+     Measured before/after on the rendered bezel, away from the label and
+     the sheen: mean luma 31 -> 15. */
+  --metal-lo: #0a0a0a;
 
   display: flex;
   flex-direction: column;
@@ -156,27 +171,45 @@
      8:1-aspect-ratio gradient wash problem (see project memory) only
      bites when an angled gradient is meant to stay LOCAL to a corner;
      these are deliberately full-width sweeps. */
+  /* MATTE, not specular. The finish reference is a satin powder-coated
+     black: its highlight is a broad soft bloom, not a tight bright
+     streak, and even at its brightest the surface stays dark. So the
+     sheen band is roughly half its former peak (0.20 -> 0.11) and spread
+     over about twice the width — a surface catching light rather than
+     reflecting a source.
+     NOTE the fine grain is now the TOP layer, above the sheen. Beneath
+     it, every translucent white layer composited over it flattened the
+     grain's contrast exactly where the light falls — the opposite of a
+     real coated surface, where raking light is what makes the texture
+     visible at all (measured on the reference sphere: grain sd ~2 in its
+     shadowed areas against ~15 under its highlight). */
   background-image:
+    var(--grain-metal),
+    var(--grain-metal-shadow),
     linear-gradient(
       97deg,
-      rgba(255, 255, 255, 0.03) 0%,
-      rgba(255, 255, 255, 0.12) 9%,
-      rgba(255, 255, 255, 0.2) 14%,
-      rgba(255, 255, 255, 0.08) 21%,
-      rgba(255, 255, 255, 0.02) 34%,
-      rgba(255, 255, 255, 0) 50%
+      rgba(255, 255, 255, 0.04) 0%,
+      rgba(255, 255, 255, 0.13) 10%,
+      rgba(255, 255, 255, 0.19) 17%,
+      rgba(255, 255, 255, 0.12) 29%,
+      rgba(255, 255, 255, 0.04) 46%,
+      rgba(255, 255, 255, 0) 64%
     ),
     linear-gradient(
       97deg,
-      rgba(0, 0, 0, 0) 40%,
-      rgba(0, 0, 0, 0.18) 68%,
-      rgba(0, 0, 0, 0.3) 100%
+      rgba(0, 0, 0, 0) 45%,
+      rgba(0, 0, 0, 0.16) 72%,
+      rgba(0, 0, 0, 0.28) 100%
     ),
     linear-gradient(180deg, rgba(0, 0, 0, 0) 70%, rgba(0, 0, 0, 0.22) 100%),
-    var(--grain-metal),
     var(--grain-metal-coarse),
     linear-gradient(var(--metal-lo), var(--metal-lo));
-  background-repeat: no-repeat, no-repeat, no-repeat, repeat, repeat, no-repeat;
+  background-repeat: repeat, repeat, no-repeat, no-repeat, no-repeat, repeat, no-repeat;
+  /* The 2px offset between the highlight and shadow copies of the bump
+     field. This single pair of numbers is what turns one noise field
+     into relief; at 0 0 the two cancel to flat grey mush. Up-left for
+     the lit side, down-right for the shadowed side. */
+  background-position: -1px -1px, 1px 1px, 0 0, 0 0, 0 0, 0 0, 0 0;
   /* Plain alpha compositing (normal) for every layer — no blend-mode
      math. background-blend-mode: screen looked right in every
      automated/headless test this session, but silently failed to
@@ -286,11 +319,19 @@
      luma of contrast against the panel is what makes the ridge visible
      at all. Falls off to near-black where it turns down into the
      cavity. */
+  /* Darkened and neutralised alongside the panel's own blacker base, so
+     the lip keeps only the few luma of contrast that make the ridge
+     read — pushing the panel to near-black and leaving this at #26282b
+     would have turned the lip into a visibly grey band. */
   background-image:
-    var(--grain-metal), var(--grain-metal-coarse),
-    linear-gradient(180deg, #26282b 0%, #131416 45%, #0a0b0c 100%);
-  background-repeat: repeat, repeat, no-repeat;
-  background-blend-mode: normal, normal, normal;
+    var(--grain-metal), var(--grain-metal-shadow), var(--grain-metal-coarse),
+    linear-gradient(180deg, #191919 0%, #0d0d0d 45%, #060606 100%);
+  background-repeat: repeat, repeat, repeat, no-repeat;
+  /* Same offset bump pair as .pump-panel — the lip is the same piece of
+     coated metal, so carrying only the highlight copy here would leave
+     it flat-grained and slightly lifted next to a bezel that has relief. */
+  background-position: -1px -1px, 1px 1px, 0 0, 0 0;
+  background-blend-mode: normal, normal, normal, normal;
   /* Matches .pump-panel's outer radius character (see that rule) —
      both a small, tight radius rather than one sharp/one soft. */
   border-radius: 6px;
