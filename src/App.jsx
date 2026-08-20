@@ -50,15 +50,43 @@ function initialValue() {
   return Number.isInteger(n) && n >= 0 && n <= MAX_VALUE ? n : 0
 }
 
-// Which readout to show. ?display=digital swaps the mechanical drums for
-// the black-and-white seven-segment screen (the alternative option the
-// client asked to see); anything else, including no param at all, gives
-// the mechanical drums. Read once at module load — this is a display
-// choice made when the kiosk page is opened, not something that changes
-// mid-run, so it deliberately isn't state.
-const DIGITAL = new URLSearchParams(window.location.search).get('display') === 'digital'
+// Which readout to show at load. ?display=digital opens straight into the
+// seven-segment screen; anything else, including no param, opens on the
+// mechanical drums. This only seeds the initial state — the toggle at the
+// bottom-left switches it afterwards and writes the choice back into the
+// URL, so the address bar always describes what is on screen and a reload
+// or a shared link lands on the same design.
+function initialDigital() {
+  return new URLSearchParams(window.location.search).get('display') === 'digital'
+}
+
+/**
+ * Switch between the two designs. Lives outside both of them: it belongs
+ * to neither the pump housing nor the flat screen, so it is styled as
+ * quiet page furniture that reads on either ground rather than trying to
+ * match one and clashing with the other.
+ */
+function DesignToggle({ digital, onToggle }) {
+  return (
+    <div className="design-toggle">
+      <span className={digital ? 'design-name' : 'design-name is-on'}>Mechanical</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={digital}
+        aria-label="Switch display design"
+        className="design-switch"
+        onClick={onToggle}
+      >
+        <span className="design-knob" />
+      </button>
+      <span className={digital ? 'design-name is-on' : 'design-name'}>Digital</span>
+    </div>
+  )
+}
 
 function App() {
+  const [digital, setDigital] = useState(initialDigital)
   const [value, setValue] = useState(initialValue)
   const [running, setRunning] = useState(false)
   const [resetSignal, setResetSignal] = useState(0)
@@ -100,6 +128,21 @@ function App() {
     setResetSignal((s) => s + 1)
   }
 
+  // Switching design keeps the current value rather than resetting it —
+  // the point of the toggle is comparing the two, which is far more
+  // useful with the same number showing in both. The URL is rewritten to
+  // match so a reload or a shared link opens on the design you were
+  // looking at. replaceState rather than pushState: flipping the switch
+  // shouldn't fill the back button with history entries.
+  const handleToggleDesign = () => {
+    const next = !digital
+    setDigital(next)
+    const url = new URL(window.location.href)
+    if (next) url.searchParams.set('display', 'digital')
+    else url.searchParams.delete('display')
+    window.history.replaceState(null, '', url)
+  }
+
   const digits = String(value).padStart(DIGIT_COUNT, '0').split('').map(Number)
 
   // The digital option is a wholly separate design, not the pump housing
@@ -109,7 +152,7 @@ function App() {
   // have no markup in common below this point. Nothing animates here
   // either (a real digital readout just changes value), so resetSignal
   // and TICK_MS go unused on this path.
-  if (DIGITAL) {
+  if (digital) {
     return (
       <div className="dg">
         <div className="dg-stage">
@@ -154,6 +197,8 @@ function App() {
             STOP THE COUNT
           </button>
         </div>
+
+        <DesignToggle digital={digital} onToggle={handleToggleDesign} />
       </div>
     )
   }
@@ -203,6 +248,8 @@ function App() {
           />
         </div>
       </div>
+
+      <DesignToggle digital={digital} onToggle={handleToggleDesign} />
     </div>
   )
 }

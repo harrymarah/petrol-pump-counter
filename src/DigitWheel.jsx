@@ -53,12 +53,21 @@ function DigitWheel({ digit, resetSignal, tickMs }) {
   const peekAbove = (digit + 9) % 10
   const peekBelow = (digit + 1) % 10
   const strip = useMemo(buildStrip, [])
-  const [pos, setPos] = useState(0)
+  // Mounts already showing `digit` rather than at 0. strip[i] === i % 10,
+  // so the digit's own value is a valid starting index. This matters
+  // because the design toggle unmounts and remounts every wheel: starting
+  // at 0 would make all ten visibly roll up to the current reading each
+  // time you switched back to the mechanical design. It also makes the
+  // ?value= freeze param render its number immediately instead of
+  // animating into it.
+  const [pos, setPos] = useState(digit)
   const [transitionOn, setTransitionOn] = useState(true)
   // True while the wheel is doing the slow reset rewind — swaps the
   // per-tick transition for the longer HOME_ROLL_MS one below.
   const [homeRoll, setHomeRoll] = useState(false)
-  const prevDigit = useRef(0)
+  // Seeded to the mounting digit to match `pos` above — left at 0 it
+  // would see a spurious change on the first effect run and roll.
+  const prevDigit = useRef(digit)
   const prevReset = useRef(resetSignal)
   // Set synchronously alongside the pos update it belongs to, then
   // consumed by the effect below — see the wrap-handling comment.
