@@ -260,13 +260,16 @@
 /* ── LITRES label ────────────────────────────────────────────── */
 
 .pump-label {
-  /* Bright near-white silver — sampled numeral fill in the reference is
-     rgb(~247,246,246), not a mid-gray silver, so the label (explicitly
-     meant to match the numerals' metal tone) is brightened to match
-     rather than using the frame's own darker gunmetal tone. */
-  /* Bright white per the brief's #f2f2f2-#ffffff band — NOT gray/silver
-     toned; all emboss shading below is pure light/dark over this white,
-     never a hue shift. */
+  /* GREY, not white (#f2f2f2 -> #a0a0a0). Both the original brief and
+     the mockup's own sampled numeral fill put this in a near-white band,
+     on the reasoning that the label should match the numerals' metal
+     tone — but Harry asked for it "greyer and less white", and at this
+     size and weight the grey is the better call anyway: it reads as a
+     marking etched into the panel rather than something printed on top
+     of it, and it stops the label competing with the counter.
+     Still neutral — the shading is pure light/dark over this tone, never
+     a hue shift. The digits stay white; only the label moved. */
+  color: #a0a0a0;
   /* Helvetica Neue at a LIGHT weight, replacing Arial Black 900.
      The family matters as much as the weight here: Arial has no light
      cut at all, so asking it for 300 gets you 400 (verified by rendering
@@ -279,10 +282,12 @@
      with no web fonts to fall back on. 'Segoe UI' is next in the stack
      because it is the one widely-installed Windows family that also has
      a true light cut.
-     Tracking stays at the original near-zero value. Harry picked this
-     over a 0.35em-tracked version of the same weight, having seen both
-     rendered on the panel — so the light weight alone is the change,
-     and the letterforms keep their normal rhythm. */
+     Tracking is opened to 0.35em. Harry first chose the tight setting
+     over this one, then came back to it after seeing the label at the
+     smaller size — which makes sense: at 10.5vh the wide tracking pushed
+     the word close to the panel's full width, where at 7vh it has room
+     to breathe and reads as an engraved instrument marking rather than
+     a word. Size and tracking were never independent choices here. */
   font-family: 'Helvetica Neue', 'Segoe UI', Helvetica, Arial, sans-serif;
   font-weight: 300;
   /* Brought back down (10.5vh -> 7vh, i.e. 109px -> 73px at kiosk size).
@@ -294,12 +299,11 @@
      to dominate. Min/max scaled by the same ratio so the clamp still
      behaves at viewport extremes. */
   font-size: clamp(18px, 7vh, 112px);
-  letter-spacing: clamp(0px, 0.12vw, 3px);
+  letter-spacing: 0.35em;
   /* CSS puts the letter-space after the LAST character too, so the word
-     sits half a space left of true centre. Barely visible at this
-     tracking, but free to correct — keep it matched to the value above
-     if the tracking ever changes. */
-  text-indent: clamp(0px, 0.12vw, 3px);
+     would sit half a space left of true centre — very visible at 0.35em.
+     MUST stay matched to the letter-spacing above. */
+  text-indent: 0.35em;
   /* TRUE slab extrusion, not shadow-as-depth: a stack of solid
      zero-blur shadow steps builds a graded mid-gray SIDE WALL running
      down-right off every letterform (the reference glyphs visibly have
@@ -319,9 +323,14 @@
      become two, and the up-left white rim goes entirely (a translucent
      white fringe on a thin white stroke is pure softness, which is the
      same reason the digits dropped theirs). */
+  /* Wall tones scaled DOWN with the face. Left at their white-face
+     values (#8f8f8d / #5c5c5a) against a #a0a0a0 face there would be
+     almost no step between face and wall, and the relief would go muddy
+     rather than reading as an edge. The ratio between them is what
+     matters, not the absolute values. */
   text-shadow:
-    0.003em 0.004em 0 #8f8f8d,
-    0.006em 0.008em 0 #5c5c5a,
+    0.003em 0.004em 0 #5f5f5e,
+    0.006em 0.008em 0 #3d3d3c,
     0.011em 0.015em 0.007em rgba(0, 0, 0, 0.5);
 }
 
