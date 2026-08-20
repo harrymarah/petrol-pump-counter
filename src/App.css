@@ -264,21 +264,21 @@
      with no web fonts to fall back on. 'Segoe UI' is next in the stack
      because it is the one widely-installed Windows family that also has
      a true light cut.
-     Tracking is opened right up to 0.35em: a light face set tight reads
-     as small body text, where the wide letterspacing makes it read as an
-     engraved instrument label, which is what it is. */
+     Tracking stays at the original near-zero value. Harry picked this
+     over a 0.35em-tracked version of the same weight, having seen both
+     rendered on the panel — so the light weight alone is the change,
+     and the letterforms keep their normal rhythm. */
   font-family: 'Helvetica Neue', 'Segoe UI', Helvetica, Arial, sans-serif;
   font-weight: 300;
   /* Significantly bigger (was clamp(18px, 4vh, 80px)) — a dominant
      title spanning a large portion of the panel width, not a caption. */
   font-size: clamp(28px, 10.5vh, 170px);
-  letter-spacing: 0.35em;
-  /* CSS puts the letter-space after the LAST character too, so the
-     rendered word sits half a space left of true centre. This pushes it
-     back. Unlike the digital build's label — centred inside a very wide
-     frame, where the same offset is invisible — this one sits above a
-     digit group it has to line up with. */
-  text-indent: 0.35em;
+  letter-spacing: clamp(0px, 0.12vw, 3px);
+  /* CSS puts the letter-space after the LAST character too, so the word
+     sits half a space left of true centre. Barely visible at this
+     tracking, but free to correct — keep it matched to the value above
+     if the tracking ever changes. */
+  text-indent: clamp(0px, 0.12vw, 3px);
   /* TRUE slab extrusion, not shadow-as-depth: a stack of solid
      zero-blur shadow steps builds a graded mid-gray SIDE WALL running
      down-right off every letterform (the reference glyphs visibly have
