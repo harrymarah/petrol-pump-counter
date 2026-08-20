@@ -229,9 +229,15 @@
      upper-left light source as the streak layer above. Plus ambient
      drop shadows so the housing sits proud of the page. */
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.7),
-    inset 1px 0 0 rgba(255, 255, 255, 0.35),
-    inset 0 3px 5px rgba(255, 255, 255, 0.1),
+    /* Top-edge highlight pulled down (was 0.7 / 0.35 / 0.1). At full
+       strength the hairline along the very top of the unit rendered at
+       luma 194 against a bezel sitting around 50 — a hard white line
+       that read as a lit chrome edge, which is the wrong material for a
+       matte powder-coated panel. Still a distinct catch of light along
+       the chamfer, just no longer the brightest thing on the housing. */
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    inset 1px 0 0 rgba(255, 255, 255, 0.2),
+    inset 0 3px 5px rgba(255, 255, 255, 0.055),
     inset 0 -1px 0 rgba(0, 0, 0, 0.9),
     inset -1px 0 0 rgba(0, 0, 0, 0.7),
     inset 0 -4px 6px rgba(0, 0, 0, 0.4),
@@ -299,9 +305,9 @@
      white fringe on a thin white stroke is pure softness, which is the
      same reason the digits dropped theirs). */
   text-shadow:
-    0.004em 0.005em 0 #8f8f8d,
-    0.008em 0.011em 0 #5c5c5a,
-    0.014em 0.02em 0.008em rgba(0, 0, 0, 0.55);
+    0.003em 0.004em 0 #8f8f8d,
+    0.006em 0.008em 0 #5c5c5a,
+    0.011em 0.015em 0.007em rgba(0, 0, 0, 0.5);
 }
 
 /* ── Drum recess housing ─────────────────────────────────────── */
@@ -319,7 +325,12 @@
   /* Widened (was 0.9vh 0.7vw) so the lip reads as a real machined ridge
      band around the cavity, not a hairline — Harry's feedback: the
      inset was getting lost. */
-  padding: 1.4vh 1vw;
+  /* Widened again (1.4vh 1vw -> 1.9vh 1.35vw) as part of making the
+     recess read deeper. A thicker band of lip around the opening is a
+     depth cue that costs nothing elsewhere — unlike darkening, which
+     runs straight into the peek slivers living in the wells' dead
+     zones. */
+  padding: 1.9vh 1.35vw;
   box-sizing: border-box;
   /* The lip is dark metal, matching the reference's own measured
      values right at this transition (rgb ~16-35, i.e. barely lighter
@@ -360,11 +371,17 @@
        plus a dark separation line OUTSIDE the lip so it visibly stands
        proud of the panel, and a faint light line under that (light
        catching the panel just past the ridge). */
-    inset 1px 1px 0 rgba(255, 255, 255, 0.5),
-    inset -1px -1px 0 rgba(0, 0, 0, 0.85),
-    inset 0 6px 14px rgba(0, 0, 0, 0.7),
-    inset 0 -3px 10px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(0, 0, 0, 0.8),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.34),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.9),
+    /* Deeper cavity. The recess FLOOR was already measured at luma 0-1,
+       so there was no darkness left to add down there — extra depth has
+       to come from the walls instead: the shadow the lip casts down the
+       inside of the opening now reaches roughly twice as far in and
+       lands harder, which is the cue that actually reads as "further
+       back". Same on the bottom wall, where bounced light stops sooner. */
+    inset 0 13px 28px rgba(0, 0, 0, 0.88),
+    inset 0 -7px 18px rgba(0, 0, 0, 0.72),
+    0 0 0 1px rgba(0, 0, 0, 0.9),
     0 2px 2px rgba(0, 0, 0, 0.55),
     0 -1px 1px rgba(0, 0, 0, 0.5);
 }
@@ -481,8 +498,13 @@
   box-shadow:
     inset 22px 0 34px rgba(0, 0, 0, 1),
     inset -22px 0 34px rgba(0, 0, 0, 1),
-    inset 0 14px 16px -4px rgba(0, 0, 0, 0.85),
-    inset 0 -4px 8px rgba(255, 255, 255, 0.14),
+    /* Deepened again with the rest of the recess. The negative spread
+       is what keeps this survivable: it holds the shadow's hard edge off
+       the very top of the well, so the extra reach darkens the wall
+       without stacking onto .digit-overlay's own dip right where the
+       peek sliver lives. Slivers re-measured after the change. */
+    inset 0 19px 22px -7px rgba(0, 0, 0, 0.9),
+    inset 0 -4px 8px rgba(255, 255, 255, 0.1),
     /* Outer edge highlight/shadow pair so the housing strip between two
        slots reads as a raised rib catching light, not a flat gap. */
     1px 0 0 rgba(255, 255, 255, 0.06),
@@ -589,9 +611,9 @@
      thing that made this read as 3D at all — just a much shallower,
      harder-edged one. */
   text-shadow:
-    0.006em 0.008em 0 #8f8f8d,
-    0.011em 0.015em 0 #5c5c5a,
-    0.016em 0.022em 0.006em rgba(0, 0, 0, 0.55);
+    0.004em 0.0055em 0 #8f8f8d,
+    0.007em 0.0095em 0 #5c5c5a,
+    0.012em 0.017em 0.005em rgba(0, 0, 0, 0.5);
 }
 
 /* Thin slivers of the adjacent digit values, visible only in the top/
@@ -777,9 +799,9 @@
      the comma reads as a different thickness of metal to the numerals
      it sits between. */
   text-shadow:
-    0.006em 0.008em 0 #8f8f8d,
-    0.011em 0.015em 0 #5c5c5a,
-    0.016em 0.022em 0.006em rgba(0, 0, 0, 0.55);
+    0.004em 0.0055em 0 #8f8f8d,
+    0.007em 0.0095em 0 #5c5c5a,
+    0.012em 0.017em 0.005em rgba(0, 0, 0, 0.5);
 }
 
 /* Deep recessed trench behind the comma, matching the digit-wells'
