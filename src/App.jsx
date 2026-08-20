@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import DigitWheel from './DigitWheel.jsx'
-import SevenSegDigit, { SevenSegComma } from './SevenSegDigit.jsx'
+import SevenSegDigit from './SevenSegDigit.jsx'
 import './App.css'
 import './Digital.css'
 
@@ -102,51 +102,76 @@ function App() {
 
   const digits = String(value).padStart(DIGIT_COUNT, '0').split('').map(Number)
 
+  // The digital option is a wholly separate design, not the pump housing
+  // with a different readout dropped into it — flat, black, graphic,
+  // with no metal, no cavity and no physical buttons. So it renders its
+  // own tree rather than sharing one with branches in it; the two builds
+  // have no markup in common below this point. Nothing animates here
+  // either (a real digital readout just changes value), so resetSignal
+  // and TICK_MS go unused on this path.
+  if (DIGITAL) {
+    return (
+      <div className="dg">
+        <div className="dg-stage">
+          <div className="dg-frame">
+            <div className="dg-label">LITRES</div>
+            <div className="dg-digits">
+              {/* No commas: the reference runs all ten digits at an even
+                  pitch, and that even rhythm is much of why it reads as
+                  a piece of hardware rather than as typeset text. */}
+              {digits.map((digit, i) => (
+                <span className="dg-slot" key={i}>
+                  <SevenSegDigit value={digit} />
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="dg-controls">
+          <button
+            type="button"
+            className="dg-button"
+            onClick={handleStartStop}
+            aria-label={running ? 'Stop' : 'Start'}
+          >
+            {running ? 'STOP FUEL FLOW' : 'START FUEL FLOW'}
+          </button>
+          <button
+            type="button"
+            className="dg-button"
+            onClick={handleReset}
+            aria-label="Reset"
+          >
+            STOP THE COUNT
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="pump">
       <div className="pump-panel">
         <div className="pump-label">LITRES</div>
 
-        <div className={DIGITAL ? 'pump-display pump-display-digital' : 'pump-display'}>
-          {DIGITAL ? (
-            // Digital readout option: one continuous black screen in the
-            // same housing, no per-digit wells. Nothing animates here —
-            // a real digital pump display just changes value — so it
-            // ignores resetSignal/tickMs entirely.
-            <div className="lcd-screen">
-              <div className="lcd-digits">
-                {digits.map((digit, i) => (
-                  <Fragment key={i}>
-                    <span className="lcd-slot">
-                      <SevenSegDigit value={digit} />
-                    </span>
-                    {COMMA_AFTER.includes(i) && (
-                      <span className="lcd-comma-slot">
-                        <SevenSegComma />
-                      </span>
-                    )}
-                  </Fragment>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="display-digits">
-              {digits.map((digit, i) => (
-                // Each digit-window and each comma is its own flex item here —
-                // deliberately NOT nested together in a shared wrapper. Nesting
-                // them meant a slot with a comma had to share its flex:1 share
-                // with that comma, making that digit-window narrower than the
-                // 7 slots with no comma. Flat siblings means every digit-window
-                // gets an equal share regardless of neighboring commas.
-                <Fragment key={i}>
-                  <span className="digit-slot">
-                    <DigitWheel digit={digit} resetSignal={resetSignal} tickMs={TICK_MS} />
-                  </span>
-                  {COMMA_AFTER.includes(i) && <span className="comma">,</span>}
-                </Fragment>
-              ))}
-            </div>
-          )}
+        <div className="pump-display">
+          <div className="display-digits">
+            {digits.map((digit, i) => (
+              // Each digit-window and each comma is its own flex item here —
+              // deliberately NOT nested together in a shared wrapper. Nesting
+              // them meant a slot with a comma had to share its flex:1 share
+              // with that comma, making that digit-window narrower than the
+              // 7 slots with no comma. Flat siblings means every digit-window
+              // gets an equal share regardless of neighboring commas.
+              <Fragment key={i}>
+                <span className="digit-slot">
+                  <DigitWheel digit={digit} resetSignal={resetSignal} tickMs={TICK_MS} />
+                </span>
+                {COMMA_AFTER.includes(i) && <span className="comma">,</span>}
+              </Fragment>
+            ))}
+          </div>
         </div>
       </div>
 

@@ -1,7 +1,7 @@
 import { memo } from 'react'
 
 /*
- * Seven-segment digits for the alternative "digital readout" display.
+ * Seven-segment digits for the digital display option.
  *
  * Drawn as SVG polygons rather than set in a seven-segment WEB FONT on
  * purpose. Three reasons, all of which have bitten this project before:
@@ -9,29 +9,28 @@ import { memo } from 'react'
  *     to load would silently fall back to a normal typeface, and the
  *     browser might synthesize a fake weight on top),
  *   - vector polygons stay razor-crisp at any size, with no hinting or
- *     antialiasing softness on the diagonals — the digits were just
- *     criticised for looking blurry, so this variant is deliberately
- *     hard-edged everywhere,
- *   - the unlit "ghost" segments (the thing that actually sells a real
- *     digital readout, versus text that happens to be square) can't be
- *     drawn with a font at all — they aren't part of the glyph.
+ *     antialiasing softness on the diagonals,
+ *   - segment geometry can be matched to the reference exactly, which a
+ *     font would only approximate.
+ *
+ * Every constant below is measured off the reference artwork
+ * (~/Downloads/number-display.png) rather than eyeballed. In that image
+ * a digit's ink is 93 x 191 px with 15px-thick segments:
+ *   W / H   = 93 / 191 = 0.487   (kept as 87 / 180)
+ *   THICK   = 15 / 191 = 7.85 % of the digit's height
+ *   THICK/W = 15 / 93  = 16.1 %  of its width
+ * The exact W is 87 rather than 87.7 so the glyph's aspect matches the
+ * aspect its layout slot works out to (see .dg-digits in Digital.css) —
+ * the SVG then fills its slot almost exactly instead of leaving a sliver
+ * of slack on one axis.
  */
-
-// Geometry, in the digit's own 100x180 coordinate space. THICK is the
-// segment thickness; GAP is the empty wedge left between the mitred tips
-// of two adjacent segments, so they read as separate physical elements
-// rather than one continuous outline.
-// W:H is deliberately narrow (~0.43, not the ~0.55 of a generic
-// calculator digit). Ten digits plus three separators have to span the
-// panel, and each slot's SVG scales to fit its box — so a wide glyph
-// forces the row to bind on WIDTH, which shrinks the digits vertically
-// and leaves the screen looking half empty. A tall narrow digit both
-// fills the screen properly and matches the proportions real fuel-pump
-// readouts use.
-const W = 62
+const W = 87
 const H = 180
-const THICK = 12
-const GAP = 3.5
+const THICK = 14
+// Empty wedge left between the mitred tips of two adjacent segments, so
+// they read as separate physical elements rather than one continuous
+// outline. Measured at 3.5px in the reference's 191-tall digit.
+const GAP = 3.3
 const HALF = THICK / 2
 
 // A horizontal segment centred on `yc`, mitred at 45° on both ends.
@@ -78,74 +77,44 @@ const SEGMENTS = {
   g: hSeg(MID_Y),
 }
 
-const SEGMENT_ORDER = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
-
 // Which segments are lit for each value.
 const LIT = {
-  0: 'abcdef',
-  1: 'bc',
-  2: 'abged',
-  3: 'abgcd',
-  4: 'fgbc',
-  5: 'afgcd',
-  6: 'afgecd',
-  7: 'abc',
-  8: 'abcdefg',
-  9: 'abcdfg',
+  0: ['a', 'b', 'c', 'd', 'e', 'f'],
+  1: ['b', 'c'],
+  2: ['a', 'b', 'g', 'e', 'd'],
+  3: ['a', 'b', 'g', 'c', 'd'],
+  4: ['f', 'g', 'b', 'c'],
+  5: ['a', 'f', 'g', 'c', 'd'],
+  6: ['a', 'f', 'g', 'e', 'c', 'd'],
+  7: ['a', 'b', 'c'],
+  8: ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
+  9: ['a', 'b', 'c', 'd', 'f', 'g'],
 }
 
-/** One seven-segment digit. `value` is 0-9. */
+/**
+ * One seven-segment digit. `value` is 0-9.
+ *
+ * Only LIT segments are drawn. An earlier pass also painted the unlit
+ * ones as faint "ghosts", on the theory that a real seven-segment module
+ * shows all its segments whether energised or not — but the reference
+ * artwork has none: sampled inside a "0", where the middle segment would
+ * be, every pixel is 0/255 pure black. The ghosts also hurt the thing
+ * this display exists to do, which is let a player read a fast-moving
+ * number at a glance.
+ */
 function SevenSegDigit({ value }) {
-  const lit = LIT[value] ?? ''
   return (
     <svg
-      className="lcd-glyph"
+      className="dg-glyph"
       viewBox={`0 0 ${W} ${H}`}
       preserveAspectRatio="xMidYMid meet"
       aria-hidden="true"
     >
-      {SEGMENT_ORDER.map((name) => (
-        <polygon
-          key={name}
-          className={lit.includes(name) ? 'seg seg-on' : 'seg seg-off'}
-          points={SEGMENTS[name]}
-        />
+      {(LIT[value] ?? []).map((name) => (
+        <polygon key={name} className="dg-seg" points={SEGMENTS[name]} />
       ))}
     </svg>
   )
 }
 
-/*
- * Thousands separator, in the same visual language. A real seven-segment
- * module has no comma — the closest it has is the square decimal point —
- * so this is built from two offset square blocks rather than a typeset
- * comma glyph, which would be the one curved, "printed"-looking mark on
- * an otherwise entirely rectilinear display. Same 180-tall coordinate
- * space as the digits so it scales and sits on the same baseline.
- */
-// Same 180-tall space as a digit, and its slot is given a matching
-// FRACTION of a digit slot's width in CSS (see .lcd-comma-slot), so the
-// comma ends up scaled by the same factor as the digits around it. Sized
-// off THICK so the blocks read as the same weight of element as a lit
-// segment — a first pass sized these independently and they scaled down
-// to unreadable specks next to the digits.
-// KEEP IN SYNC: .lcd-comma-slot's flex ratio must equal COMMA_W / W.
-const COMMA_W = 26
-
-function SevenSegComma() {
-  const y = H - 2 * THICK
-  return (
-    <svg
-      className="lcd-glyph lcd-glyph-comma"
-      viewBox={`0 0 ${COMMA_W} ${H}`}
-      preserveAspectRatio="xMidYMid meet"
-      aria-hidden="true"
-    >
-      <rect className="seg seg-on" x={COMMA_W - THICK - 2} y={y} width={THICK} height={THICK} />
-      <rect className="seg seg-on" x="2" y={y + THICK} width={THICK} height={THICK} />
-    </svg>
-  )
-}
-
 export default memo(SevenSegDigit)
-export { SevenSegComma }
