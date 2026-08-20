@@ -504,20 +504,26 @@
   color: #f4f4f3;
   /* Slab extrusion, same solid-step side-wall technique as .pump-label
      (see that rule's comment for why blurred shadows kept reading
-     flat): ~0.02em of graded gray wall (~5px at Harry's viewport digit
-     size — pulled back from 0.033em with him: the deeper wall read as
-     floating CG lettering) + cast shadow after it.
+     flat) + a cast shadow after the wall.
      Sharpness pass: NO up-left white rim here (a half-transparent white
      fringe outside a white glyph reads as glow/soft edge — it widened
-     the measured edge transition to ~3px), first wall step darkened so
-     the face→wall boundary is a crisp jump, and the cast blur tightened
-     and kept clear of the glyph edge. */
+     the measured edge transition to ~3px).
+     Depth pulled back AGAIN (client feedback: the digits read blurry).
+     The wall, not the cast shadow, was the cause — the cast shadow is
+     black-on-near-black and barely visible, but a ~5px band of graded
+     mid-gray hugging the down-right side of every white stroke is
+     exactly what soft antialiasing looks like at a glance. Two changes:
+     the wall is roughly halved (0.02em -> 0.011em, ~2.7px at Harry's
+     viewport digit size), and its first step drops straight to a mid
+     gray (#8f8f8d) instead of easing down from near-white (#b4b4b2), so
+     the face-to-wall boundary is a hard tonal jump the eye reads as an
+     EDGE rather than a gradient. Still a solid zero-blur wall — the
+     thing that made this read as 3D at all — just a much shallower,
+     harder-edged one. */
   text-shadow:
-    0.005em 0.0065em 0 #b4b4b2,
-    0.01em 0.013em 0 #989896,
-    0.015em 0.0195em 0 #747472,
-    0.02em 0.026em 0 #525250,
-    0.03em 0.04em 0.015em rgba(0, 0, 0, 0.65);
+    0.006em 0.008em 0 #8f8f8d,
+    0.011em 0.015em 0 #5c5c5a,
+    0.016em 0.022em 0.006em rgba(0, 0, 0, 0.55);
 }
 
 /* Thin slivers of the adjacent digit values, visible only in the top/
@@ -693,13 +699,13 @@
   margin-right: clamp(5px, 0.8vw, 14px);
   /* Same bright near-white silver as the numerals/label. */
   color: #f4f4f3;
-  /* Same slab extrusion as .digit-cell. */
+  /* Same slab extrusion as .digit-cell — must stay in step with it, or
+     the comma reads as a different thickness of metal to the numerals
+     it sits between. */
   text-shadow:
-    0.005em 0.0065em 0 #b4b4b2,
-    0.01em 0.013em 0 #989896,
-    0.015em 0.0195em 0 #747472,
-    0.02em 0.026em 0 #525250,
-    0.03em 0.04em 0.015em rgba(0, 0, 0, 0.65);
+    0.006em 0.008em 0 #8f8f8d,
+    0.011em 0.015em 0 #5c5c5a,
+    0.016em 0.022em 0.006em rgba(0, 0, 0, 0.55);
 }
 
 /* Deep recessed trench behind the comma, matching the digit-wells'

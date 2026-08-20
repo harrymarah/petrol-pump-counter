@@ -1,0 +1,166 @@
+/*
+ * Alternative display option: a black-and-white DIGITAL readout, shown
+ * instead of the mechanical drums when the page is loaded with
+ * ?display=digital.
+ *
+ * Scope of the swap: the pump housing is unchanged. The brushed-steel
+ * panel, the machined lip around the cavity, the LITRES label and the
+ * buttons are all signed off and stay exactly as they are — the only
+ * thing that changes is the readout technology sitting inside the
+ * housing. So this file styles the screen and its glyphs and touches
+ * nothing else; .pump-display (the lip/recess) is reused as-is.
+ *
+ * Deliberately monochrome: pure white segments on black, no colour cast
+ * anywhere, no glow/bloom. This variant is also the answer to "the
+ * digits look blurry" taken to its limit — every edge here is a vector
+ * polygon boundary, so there is nothing soft on screen at all.
+ */
+
+/* The housing's cavity overlay is retuned for a flat screen.
+   .pump-display::after paints hard black curtains a few percent in from
+   each edge — correct for the mechanical build, where those edges are
+   the curved inner walls of a deep drum cavity, but wrong here: a flat
+   pane of glass has no such walls, and the curtains were landing
+   directly on the first and last digits. Measured: the rightmost lit
+   segment rendered at luma 172 against 244 for every other segment on
+   the display, which read as the end digits being faulty. Replaced with
+   one broad, gentle vignette that stays clear of the glyphs. */
+.pump-display-digital::after {
+  background: radial-gradient(
+    ellipse 118% 108% at 50% 48%,
+    rgba(0, 0, 0, 0) 78%,
+    rgba(0, 0, 0, 0.3) 100%
+  );
+}
+
+.lcd-screen {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: var(--window-h);
+  box-sizing: border-box;
+  /* Vertical padding in vh, NOT %: a percentage padding resolves against
+     the element's WIDTH on both axes, and this box is ~1848px wide, so
+     "3.5%" was silently eating 65px off the top and bottom of the
+     screen and squashing the readout. */
+  padding: 3vh 1.1vw;
+  /* Black glass. The faint centre lift is what stops a large black
+     rectangle reading as a hole cut in the panel — real display glass
+     picks up a little ambient light across its middle. Kept as a
+     RADIAL gradient, not an angled linear one: this box is ~8:1
+     width:height, and on a box that extreme an angled linear gradient's
+     colour bands run right across the whole element instead of staying
+     local (documented on this project — it washed half the panel bright
+     the first time). */
+  background:
+    radial-gradient(
+      ellipse 70% 62% at 50% 44%,
+      rgba(255, 255, 255, 0.045) 0%,
+      rgba(255, 255, 255, 0) 72%
+    ),
+    #070707;
+  /* Same raised-lip rim as .display-digits wears in the mechanical
+     build, so the screen sits in the housing's opening identically:
+     hairline ring, brighter line catching the light on the bottom rim,
+     dark line on the shadowed top rim. */
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.2),
+    0 2px 1px rgba(255, 255, 255, 0.42),
+    0 -2px 1px rgba(0, 0, 0, 0.9),
+    /* Inner darkening at the edges — the glass sits below the lip, so
+       the perimeter falls into the lip's own shadow. */
+    inset 0 10px 22px -6px rgba(0, 0, 0, 0.9),
+    inset 0 -6px 16px -6px rgba(0, 0, 0, 0.7);
+}
+
+.lcd-digits {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  /* Generous gap. Unlike the mechanical build — where a physical rib
+     between two drums separates neighbouring digits — nothing here
+     divides one digit from the next but empty glass, so a hairline gap
+     let adjacent segments run together into one continuous bar and the
+     number stopped reading as separate figures. */
+  gap: clamp(6px, 1.7vw, 36px);
+}
+
+/* Every digit gets an equal share of the width, with the commas as
+   flat siblings on the same flex row rather than nested inside a
+   digit's box — same reasoning as the mechanical build: nesting made a
+   slot that owns a comma narrower than the slots that don't. */
+.lcd-slot {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+}
+
+/* A fixed FRACTION of a digit slot rather than an absolute width, so the
+   comma's SVG gets scaled by the same factor as the digits at every
+   viewport size. The ratio is COMMA_W / W from SevenSegDigit.jsx
+   (26 / 62) and must be kept in step with it. An absolute width here
+   made the commas scale independently and they came out as specks. */
+.lcd-comma-slot {
+  flex: 0.42 1 0;
+  min-width: 0;
+  height: 100%;
+}
+
+/* preserveAspectRatio="xMidYMid meet" on the SVG means the glyph scales
+   to fit whichever of its box's dimensions binds first, so the readout
+   can never overflow the screen at any viewport aspect — it just gets
+   smaller. */
+.lcd-glyph {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Lit segments: flat white, no glow. A bloom/blur here would look like
+   a photograph of a display rather than a display, and softness is the
+   exact thing this variant is meant to avoid. */
+.seg-on {
+  fill: #f4f4f4;
+}
+
+/* Unlit segments, faintly visible against the glass. This is the detail
+   that makes it read as a real seven-segment module: on actual hardware
+   every segment is physically present whether or not it is energised,
+   so the "8" behind every digit is always faintly there. Alpha is low
+   enough that the lit value is never ambiguous at a glance — this is a
+   number players read quickly while it is still moving, so legibility
+   wins wherever it pulls against authenticity. A first pass at 0.055
+   put the ghosts bright enough that ten adjacent ghost-8s read as a
+   continuous field and the actual value got lost in it. */
+.seg-off {
+  fill: rgba(255, 255, 255, 0.035);
+}
+
+/* Glass sheen over the whole screen, above the glyphs. One narrow
+   near-vertical band matching the panel's own highlight streak and
+   light direction, at low alpha — enough to say "there is glass in
+   front of this", not enough to fight the readout. */
+.lcd-screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  background: linear-gradient(
+    97deg,
+    rgba(255, 255, 255, 0) 6%,
+    rgba(255, 255, 255, 0.05) 13%,
+    rgba(255, 255, 255, 0) 26%
+  );
+}
+
+/* The sheen above is absolutely positioned, so the screen has to be its
+   containing block. Explicit z-index (not position alone) so the sheen's
+   stacking stays scoped here — position:relative on its own does NOT
+   create a stacking context, which has already caused one escaped
+   pseudo-element on this project. */
+.lcd-screen {
+  position: relative;
+  z-index: 0;
+}

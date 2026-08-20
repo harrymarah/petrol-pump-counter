@@ -1,8 +1,10 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import DigitWheel from './DigitWheel.jsx'
+import SevenSegDigit, { SevenSegComma } from './SevenSegDigit.jsx'
 import './App.css'
+import './Digital.css'
 
-const DIGIT_COUNT = 10  // covers up to 9,999,999,999 — real target is ~3.25 billion litres
+const DIGIT_COUNT = 10  // covers up to 9,999,999,999 — real target is ~3.5 billion litres
 // Positions (0-indexed from the left) after which a comma is printed —
 // derived from DIGIT_COUNT so it's automatically correct if this changes
 // again (standard thousands grouping, counting from the right).
@@ -15,12 +17,13 @@ const COMMA_AFTER = Array.from({ length: DIGIT_COUNT - 1 }, (_, i) => i).filter(
 // transition) was the main cause of the juddery motion.
 const TICK_MS = 120
 // The real answer the client will reveal, in LITRES (not cans — a can is
-// ~250ml, so ~13 billion cans is ~3.25 billion litres). Pacing below is
+// ~250ml, so ~14 billion cans is ~3.5 billion litres). Pacing below is
 // derived from THIS, not MAX_VALUE — MAX_VALUE is just the display's
 // headroom so the counter can keep running sensibly if held past the
 // target, not the number a run is paced to reach.
-const REAL_TARGET = 3_250_000_000
-const RUN_SECONDS = 17.5  // midpoint of the ~15-20s pacing target
+const REAL_TARGET = 3_500_000_000
+const RUN_SECONDS = 15  // client's requested run length: the counter should
+                        // reach the target ~15 s after START
 const RAMP_TICKS = 8  // ticks to reach full speed (~1 s)
 
 // MAX_RATE is derived from REAL_TARGET rather than a hand-picked magic
@@ -46,6 +49,14 @@ function initialValue() {
   const n = raw === null ? NaN : Number(raw)
   return Number.isInteger(n) && n >= 0 && n <= MAX_VALUE ? n : 0
 }
+
+// Which readout to show. ?display=digital swaps the mechanical drums for
+// the black-and-white seven-segment screen (the alternative option the
+// client asked to see); anything else, including no param at all, gives
+// the mechanical drums. Read once at module load — this is a display
+// choice made when the kiosk page is opened, not something that changes
+// mid-run, so it deliberately isn't state.
+const DIGITAL = new URLSearchParams(window.location.search).get('display') === 'digital'
 
 function App() {
   const [value, setValue] = useState(initialValue)
@@ -96,23 +107,46 @@ function App() {
       <div className="pump-panel">
         <div className="pump-label">LITRES</div>
 
-        <div className="pump-display">
-          <div className="display-digits">
-            {digits.map((digit, i) => (
-              // Each digit-window and each comma is its own flex item here —
-              // deliberately NOT nested together in a shared wrapper. Nesting
-              // them meant a slot with a comma had to share its flex:1 share
-              // with that comma, making that digit-window narrower than the
-              // 7 slots with no comma. Flat siblings means every digit-window
-              // gets an equal share regardless of neighboring commas.
-              <Fragment key={i}>
-                <span className="digit-slot">
-                  <DigitWheel digit={digit} resetSignal={resetSignal} tickMs={TICK_MS} />
-                </span>
-                {COMMA_AFTER.includes(i) && <span className="comma">,</span>}
-              </Fragment>
-            ))}
-          </div>
+        <div className={DIGITAL ? 'pump-display pump-display-digital' : 'pump-display'}>
+          {DIGITAL ? (
+            // Digital readout option: one continuous black screen in the
+            // same housing, no per-digit wells. Nothing animates here —
+            // a real digital pump display just changes value — so it
+            // ignores resetSignal/tickMs entirely.
+            <div className="lcd-screen">
+              <div className="lcd-digits">
+                {digits.map((digit, i) => (
+                  <Fragment key={i}>
+                    <span className="lcd-slot">
+                      <SevenSegDigit value={digit} />
+                    </span>
+                    {COMMA_AFTER.includes(i) && (
+                      <span className="lcd-comma-slot">
+                        <SevenSegComma />
+                      </span>
+                    )}
+                  </Fragment>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="display-digits">
+              {digits.map((digit, i) => (
+                // Each digit-window and each comma is its own flex item here —
+                // deliberately NOT nested together in a shared wrapper. Nesting
+                // them meant a slot with a comma had to share its flex:1 share
+                // with that comma, making that digit-window narrower than the
+                // 7 slots with no comma. Flat siblings means every digit-window
+                // gets an equal share regardless of neighboring commas.
+                <Fragment key={i}>
+                  <span className="digit-slot">
+                    <DigitWheel digit={digit} resetSignal={resetSignal} tickMs={TICK_MS} />
+                  </span>
+                  {COMMA_AFTER.includes(i) && <span className="comma">,</span>}
+                </Fragment>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
