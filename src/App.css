@@ -544,7 +544,20 @@
      rendered side-by-side against the mockup before choosing. System
      font on macOS + Windows — no web-font dependency for the kiosk. */
   font-family: 'Arial Narrow', 'Avenir Next Condensed', Arial, sans-serif;
-  font-weight: 700;
+  /* Dropped 700 -> 400 alongside the LITRES label going light.
+     Arial Narrow has exactly TWO real cuts and 400 is the lighter of
+     them — measured by ink coverage, not by advance width, because
+     figures are tabular and every weight reports an identical width
+     (all six of 200-700 came back at 912px, which proves nothing). By
+     coverage: 300/400/500 all render at 16.16% and 700 at 21.93%, so
+     the family is Regular + Bold and this is a genuine ~26% lighter
+     face rather than a synthesised one.
+     Staying in the same family matters here: Helvetica Neue at 300 was
+     tried and its figures are much wider, so the digits crowded their
+     wells and lost the per-drum separation. Arial Narrow 400 keeps the
+     condensed proportions and the exact same advance width, so nothing
+     about the layout moves. */
+  font-weight: 400;
   /* 0.75 of the cell with 10% side padding puts the widest digit ink
      ("0") at ~70% of the well width and narrower ones around 60-65%
      (measured) — visible margin both sides, never scaled/stretched to
@@ -607,7 +620,10 @@
   /* Same face/size as .digit-cell so a sliver lines up with the digit
      that will roll into place. */
   font-family: 'Arial Narrow', 'Avenir Next Condensed', Arial, sans-serif;
-  font-weight: 700;
+  /* 400, not 700 — see the weight note on .digit-cell. All three of the
+     digit / peek-sliver / comma rules must carry the SAME weight or a
+     sliver rolling into place changes thickness as it arrives. */
+  font-weight: 400;
   font-size: calc(var(--window-h) * var(--cell-ratio) * 0.75);
   /* Dimmer than the in-focus digits by design — the sliver sits in the
      drum's shadowed curve (ref slivers sample at luma ~20-40), and a
@@ -737,7 +753,10 @@
      height, which is what a comma glyph at equal font-size gives) —
      a bold chunky mark whose stroke matches the numerals. */
   font-family: 'Arial Narrow', 'Avenir Next Condensed', Arial, sans-serif;
-  font-weight: 700;
+  /* 400, not 700 — see the weight note on .digit-cell. All three of the
+     digit / peek-sliver / comma rules must carry the SAME weight or a
+     sliver rolling into place changes thickness as it arrives. */
+  font-weight: 400;
   font-size: calc(var(--window-h) * var(--cell-ratio) * 0.75);
   width: clamp(12px, 2vw, 40px);
   /* Positions the comma tight under the digits' shared baseline (the
