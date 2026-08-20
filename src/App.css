@@ -655,11 +655,22 @@
      the vertical-presence gap vs the reference without exceeding the
      brief's 60-70% width band. */
   font-size: calc(var(--window-h) * var(--cell-ratio) * 0.75);
-  /* Bright white per the brief (and the reference's own sampled numeral
-     fill, rgb ~246) — not gray/silver. Solid fill + text-shadow only:
-     gradient/background-clip fills have a documented GPU-compositing
-     failure history on this project. */
-  color: #f4f4f3;
+  /* Nudged very slightly off white (#f4f4f3 -> #e4e4e3, luma 244 -> 228)
+     — a small step, deliberately NOT toward the label's #a0a0a0. The
+     digits stay the brightest thing on the panel and still read as white
+     on their own; the nudge only takes the hard edge off, so they sit
+     with the greyer label instead of glaring against it. Picked from a
+     rendered ladder: #ececeb was too small a step to see at all, and
+     #d4d4d3 started to lose the white-digit character.
+     Still the brief's "not gray/silver" intent — this is a shade off
+     white, not a grey. Solid fill + text-shadow only: gradient and
+     background-clip fills have a documented GPU-compositing failure
+     history on this project.
+     The extrusion wall below is unchanged: at a 6% face shift the
+     face-to-wall step is still a hard jump, and .digit-peek keeps its
+     own separately-tuned dimmer tone, whose value is balanced against
+     the overlay alphas rather than derived from this one. */
+  color: #e4e4e3;
   /* Slab extrusion, same solid-step side-wall technique as .pump-label
      (see that rule's comment for why blurred shadows kept reading
      flat) + a cast shadow after the wall.
@@ -861,8 +872,10 @@
      gaps. */
   margin-left: clamp(5px, 0.8vw, 14px);
   margin-right: clamp(5px, 0.8vw, 14px);
-  /* Same bright near-white silver as the numerals/label. */
-  color: #f4f4f3;
+  /* Must track .digit-cell's fill exactly — the comma sits between two
+     numerals and any difference reads as a mismatched part. (No longer
+     "same as the label": the label is grey now, the digits are not.) */
+  color: #e4e4e3;
   /* Same slab extrusion as .digit-cell — must stay in step with it, or
      the comma reads as a different thickness of metal to the numerals
      it sits between. */
