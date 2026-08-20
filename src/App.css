@@ -22,6 +22,15 @@
      edge-to-edge element the reference shows, not a smaller block
      with a lot of surrounding charcoal. */
   --window-h: 45vh;
+  /* Thickness of the recess's inner wall — i.e. how deep the cavity
+     reads. Used as .pump-display's padding AND as the inset on its
+     ::after cavity overlay, which must line up with the wall's inner
+     edge: that overlay darkens the drum FLOOR (inset box-shadows on a
+     parent can't reach its children, so it has to be painted on top),
+     and while it covered the wall too it was painting straight over the
+     chamfer's lit edge and flattening it. */
+  --wall-v: 3.6vh;
+  --wall-h: 2.4vw;
   --cell-ratio: 0.7; /* CELL_HEIGHT / WINDOW_HEIGHT  */
   --top-pct: 15%; /* (1 - 0.7) / 2 = 15 %        */
   /* Procedural fractal-noise tile used for the moulded-plastic grain
@@ -325,12 +334,16 @@
   /* Widened (was 0.9vh 0.7vw) so the lip reads as a real machined ridge
      band around the cavity, not a hairline — Harry's feedback: the
      inset was getting lost. */
-  /* Widened again (1.4vh 1vw -> 1.9vh 1.35vw) as part of making the
-     recess read deeper. A thicker band of lip around the opening is a
-     depth cue that costs nothing elsewhere — unlike darkening, which
-     runs straight into the peek slivers living in the wells' dead
-     zones. */
-  padding: 1.9vh 1.35vw;
+  /* THIS BAND IS THE CAVITY WALL, and its width is the cavity's depth.
+     It was previously modelled as a raised ridge sitting on the panel —
+     lighter at its top edge, "catching the overhead light". That is the
+     opposite of a recess, and it is why earlier rounds of darkening kept
+     making the opening dimmer without ever making it look deeper: a
+     recess is not a dark rectangle, it is two visible edges with a
+     shaded wall running between them, and there was only ever one edge.
+     So the band is now genuinely wide (1.9vh 1.35vw -> 3.6vh 2.4vw) and
+     shaded as a wall — see the gradient and the rim lines below. */
+  padding: var(--wall-v) var(--wall-h);
   box-sizing: border-box;
   /* The lip is dark metal, matching the reference's own measured
      values right at this transition (rgb ~16-35, i.e. barely lighter
@@ -339,18 +352,40 @@
      lines below, plus the grain continuing across it. Darkened further
      and picked up the second (coarse) grain layer to match .pump-panel's
      blackened-steel tone and non-repeating texture. */
-  /* Slightly LIGHTER than the (now much blacker) panel at its top edge:
-     the lip is a raised ridge catching the overhead light, and a few
-     luma of contrast against the panel is what makes the ridge visible
-     at all. Falls off to near-black where it turns down into the
-     cavity. */
-  /* Darkened and neutralised alongside the panel's own blacker base, so
-     the lip keeps only the few luma of contrast that make the ridge
-     read — pushing the panel to near-black and leaving this at #26282b
-     would have turned the lip into a visibly grey band. */
+  /* Wall shading, and the direction is INVERTED from what was here
+     before. The old gradient ran light-at-top to dark-at-bottom, which
+     is how you shade a ridge standing proud of a surface. A wall going
+     the other way — down into the panel — is shaded the opposite way:
+     the flange overhangs the top of the opening and throws the upper
+     wall into its deepest shadow, while the lower wall faces up and
+     catches bounced light. Flipping this is most of what makes the
+     opening read as having depth rather than just being dark. */
   background-image:
     var(--grain-metal), var(--grain-metal-shadow), var(--grain-metal-coarse),
-    linear-gradient(180deg, #191919 0%, #0d0d0d 45%, #060606 100%);
+    /* The wall is shaded as a CHAMFER — an angled face, not a flat band.
+       A flat dark band the same tone as the floor it meets reads as one
+       thick edge however wide you make it; an angled one reads as
+       distance. The stops are placed at the band's own boundaries: the
+       wall is padding-top (3.6vh) of an element that is 53.4vh tall, so
+       the top wall occupies the first 6.7% and the bottom wall the last
+       6.7%. Both ratios are viewport-independent, since the padding and
+       --window-h are both in vh.
+       Top wall: starts brighter than the panel (its chamfer faces up
+       into the light), then falls to black as it turns away — angling
+       into shadow. Bottom wall: the mirror, black where it meets the
+       floor and brightest at the outer edge, because that face is the
+       one pointing back up at the source. The middle stops are hidden
+       behind the digits and only exist to keep the two ends apart. */
+    linear-gradient(
+      180deg,
+      #3c3c3c 0%,
+      #1a1a1a 2.4%,
+      #070707 6.7%,
+      #050505 50%,
+      #090909 93.3%,
+      #2b2b2b 97.2%,
+      #444444 100%
+    );
   background-repeat: repeat, repeat, repeat, no-repeat;
   /* Same offset bump pair as .pump-panel — the lip is the same piece of
      coated metal, so carrying only the highlight copy here would leave
@@ -367,23 +402,29 @@
      chamfered-lip close-up, not a flat cutout straight from metal to
      black. */
   box-shadow:
-    /* Outer rim of the raised lip: bright top edge, dark under-edge,
-       plus a dark separation line OUTSIDE the lip so it visibly stands
-       proud of the panel, and a faint light line under that (light
-       catching the panel just past the ridge). */
-    inset 1px 1px 0 rgba(255, 255, 255, 0.34),
-    inset -1px -1px 0 rgba(0, 0, 0, 0.9),
-    /* Deeper cavity. The recess FLOOR was already measured at luma 0-1,
-       so there was no darkness left to add down there — extra depth has
-       to come from the walls instead: the shadow the lip casts down the
-       inside of the opening now reaches roughly twice as far in and
-       lands harder, which is the cue that actually reads as "further
-       back". Same on the bottom wall, where bounced light stops sooner. */
-    inset 0 13px 28px rgba(0, 0, 0, 0.88),
-    inset 0 -7px 18px rgba(0, 0, 0, 0.72),
-    0 0 0 1px rgba(0, 0, 0, 0.9),
-    0 2px 2px rgba(0, 0, 0, 0.55),
-    0 -1px 1px rgba(0, 0, 0, 0.5);
+    /* THE MOUTH — the outer of the recess's two edges, where the panel
+       surface breaks and turns down into the cavity. Read from outside
+       in: the panel's chamfer catches light along the TOP of the
+       opening, then the wall immediately inside it is in hard shadow.
+       Along the BOTTOM of the opening the chamfer faces away from the
+       light so it goes dark, and the wall inside it is the lit one.
+       That inversion top-to-bottom is what tells the eye this is a hole
+       rather than a raised block. */
+    0 -1px 0 rgba(255, 255, 255, 0.3),
+    0 1px 0 rgba(0, 0, 0, 0.95),
+    0 0 0 1px rgba(0, 0, 0, 0.85),
+    0 3px 5px rgba(0, 0, 0, 0.5),
+    /* Deliberately restrained from here down, and NOTHING dark sits on
+       the top few pixels. A first pass piled a 26px cast shadow and hard
+       inset lines here, which painted straight over the chamfer's lit
+       edge and crushed the wall gradient back to black — and a wall the
+       same colour as the floor it meets reads as one thick edge no
+       matter how wide it is, which is the exact flat look this round is
+       trying to get away from. The gradient above describes the wall;
+       these only shade the two side walls, which have no gradient of
+       their own because the fill runs top-to-bottom. */
+    inset 26px 0 30px -18px rgba(0, 0, 0, 0.85),
+    inset -26px 0 30px -18px rgba(0, 0, 0, 0.85);
 }
 
 /* Cavity shadow painted ON TOP of the drum wells. The recess depth
@@ -397,7 +438,12 @@
 .pump-display::after {
   content: '';
   position: absolute;
-  inset: 0;
+  /* Inset to the wall's inner edge, NOT to the element box — see
+     --wall-v/--wall-h. This overlay exists to darken the drum floor, and
+     covering the wall as well meant its 0.62-alpha top curtain was
+     painting over the chamfer highlight and dropping it from luma 60 to
+     17, which is why widening the wall alone never read as depth. */
+  inset: var(--wall-v) var(--wall-h);
   pointer-events: none;
   z-index: 2;
   /* Curtain strengths chosen together with .digit-overlay's dips: their
@@ -449,10 +495,17 @@
      source as everything else). Non-inset shadows on this box paint
      OUTWARD onto .pump-display's lip band, exactly at the transition
      edge. */
+  /* This is the INNER of the recess's two edges — where the cavity wall
+     bottoms out and the drum floor begins. Having it read as a distinct
+     second edge, a wall's width in from the mouth, is what gives the
+     opening a measurable depth instead of a single dark step. The wall
+     above it is in shadow so that side goes hard dark; the wall below
+     faces up into the bounce so that side catches a crisp light line. */
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.2),
-    0 2px 1px rgba(255, 255, 255, 0.42),
-    0 -2px 1px rgba(0, 0, 0, 0.9);
+    0 0 0 1px rgba(0, 0, 0, 0.9),
+    0 3px 2px rgba(255, 255, 255, 0.3),
+    0 -3px 3px rgba(0, 0, 0, 1),
+    0 -7px 12px rgba(0, 0, 0, 0.75);
 }
 
 /* ── Individual drum slots ───────────────────────────────────── */
