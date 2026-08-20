@@ -114,19 +114,31 @@
   display: flex;
   align-items: stretch;
   /* A column-gap percentage resolves against the container's own width.
-     Calibrated against the rendered result rather than derived: 3.9%
-     measured a digit-gap-to-digit-width ratio of 0.67 against the
-     reference's 0.60, so the digits were coming out narrower and further
-     apart than the artwork. At 3.5% each slot is wide enough that the
-     glyph binds on HEIGHT instead, filling the full 47.5% band. */
-  gap: 3.5%;
+     Tightened from 3.5% when the commas were added. The reference has no
+     separators, so it can afford a 0.60-of-a-digit gap between all ten
+     figures; three comma slots plus their three extra gaps do not fit
+     alongside that, and keeping it would have shrunk every digit by
+     ~23%. At 2.3% the gap works out to ~0.35 of a digit width, which
+     holds the digits at the reference's own size and buys the room back.
+     The grouping reads better for it too: digits inside a group sit
+     close, and a comma plus the gap either side opens a break three
+     times as wide at each thousands boundary. */
+  gap: 2.3%;
 }
 
-/* No thousands separators — the reference runs all ten digits at an even
-   pitch with no commas, and the even rhythm is a large part of why it
-   reads as a piece of hardware rather than as typeset text. */
 .dg-slot {
   flex: 1 1 0;
+  min-width: 0;
+}
+
+/* A fixed FRACTION of a digit slot rather than an absolute width, so the
+   comma's SVG is scaled by the same factor as the digits at every
+   viewport size and its blocks come out the same weight as a lit
+   segment. The ratio is COMMA_W / W from SevenSegDigit.jsx (30 / 87) and
+   must be kept in step with it — sizing a comma independently of the
+   digits around it makes it scale on its own and render as a speck. */
+.dg-comma-slot {
+  flex: 0.345 1 0;
   min-width: 0;
 }
 
@@ -141,8 +153,27 @@
   height: 100%;
 }
 
-.dg-seg {
+.dg-seg-on {
   fill: #fcfcfc;
+}
+
+/* Unlit segments, dim but genuinely visible — a faint 8 standing behind
+   every digit, the way a real seven-segment module shows every segment
+   whether energised or not. Harry asked for these; the reference artwork
+   has none (sampled: pure black where the middle segment would be), so
+   this is a deliberate departure.
+   The alpha is the whole balance of this element, and it was picked by
+   rendering the same number at 0.15 / 0.11 / 0.085 / 0.065 / 0.05 and
+   comparing. Too low and the ghosts may as well not be there; too high
+   and ten ghost-8s merge into a field that swallows the value — 0.15 was
+   over that line, where "3,456,789,012" stopped reading at a glance.
+   0.11 is the most presence the ghosts can have while the lit digits
+   still carry the number, which is the right side to err on given they
+   were asked for specifically. It renders at luma 28 against the lit
+   segments' 252, a 9:1 ratio. This is the one number to nudge if the
+   ghosts want to be stronger or fainter. */
+.dg-seg-off {
+  fill: rgba(255, 255, 255, 0.11);
 }
 
 /* ── Controls ────────────────────────────────────────────────────

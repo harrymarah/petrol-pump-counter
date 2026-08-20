@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import DigitWheel from './DigitWheel.jsx'
-import SevenSegDigit from './SevenSegDigit.jsx'
+import SevenSegDigit, { SevenSegComma } from './SevenSegDigit.jsx'
 import './App.css'
 import './Digital.css'
 
@@ -116,13 +116,21 @@ function App() {
           <div className="dg-frame">
             <div className="dg-label">LITRES</div>
             <div className="dg-digits">
-              {/* No commas: the reference runs all ten digits at an even
-                  pitch, and that even rhythm is much of why it reads as
-                  a piece of hardware rather than as typeset text. */}
+              {/* Digits and commas are flat siblings on one flex row,
+                  deliberately NOT nested together — a slot that owned a
+                  comma would have to share its flex allowance with it and
+                  would come out narrower than the slots that don't. */}
               {digits.map((digit, i) => (
-                <span className="dg-slot" key={i}>
-                  <SevenSegDigit value={digit} />
-                </span>
+                <Fragment key={i}>
+                  <span className="dg-slot">
+                    <SevenSegDigit value={digit} />
+                  </span>
+                  {COMMA_AFTER.includes(i) && (
+                    <span className="dg-comma-slot">
+                      <SevenSegComma />
+                    </span>
+                  )}
+                </Fragment>
               ))}
             </div>
           </div>

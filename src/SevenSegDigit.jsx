@@ -91,18 +91,21 @@ const LIT = {
   9: ['a', 'b', 'c', 'd', 'f', 'g'],
 }
 
+const SEGMENT_ORDER = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+
 /**
  * One seven-segment digit. `value` is 0-9.
  *
- * Only LIT segments are drawn. An earlier pass also painted the unlit
- * ones as faint "ghosts", on the theory that a real seven-segment module
- * shows all its segments whether energised or not — but the reference
- * artwork has none: sampled inside a "0", where the middle segment would
- * be, every pixel is 0/255 pure black. The ghosts also hurt the thing
- * this display exists to do, which is let a player read a fast-moving
- * number at a glance.
+ * ALL seven segments are drawn; the unlit ones render as dim "ghosts"
+ * (see .dg-seg-off), the way a real seven-segment module shows every
+ * segment whether or not it is energised — so a faint 8 stands behind
+ * every digit. Harry asked for these specifically. Note the reference
+ * artwork does NOT have them: sampled inside its "0"s, where the middle
+ * segment would sit, every pixel is pure black. This is a deliberate
+ * departure from it, not an oversight.
  */
 function SevenSegDigit({ value }) {
+  const lit = LIT[value] ?? []
   return (
     <svg
       className="dg-glyph"
@@ -110,11 +113,60 @@ function SevenSegDigit({ value }) {
       preserveAspectRatio="xMidYMid meet"
       aria-hidden="true"
     >
-      {(LIT[value] ?? []).map((name) => (
-        <polygon key={name} className="dg-seg" points={SEGMENTS[name]} />
+      {SEGMENT_ORDER.map((name) => (
+        <polygon
+          key={name}
+          className={lit.includes(name) ? 'dg-seg dg-seg-on' : 'dg-seg dg-seg-off'}
+          points={SEGMENTS[name]}
+        />
       ))}
     </svg>
   )
 }
 
+/*
+ * Thousands separator, in the same visual language. A real seven-segment
+ * module has no comma — the nearest thing it has is the square decimal
+ * point — so this is two offset blocks rather than a typeset comma,
+ * which would be the one curved, "printed"-looking mark on an otherwise
+ * entirely rectilinear display.
+ *
+ * Same 180-tall coordinate space as a digit, and .dg-comma-slot gives it
+ * COMMA_W/W of a digit slot's width, so it lands at exactly the digit
+ * scale and its blocks come out the same weight as a lit segment. The
+ * blocks sit hard at the bottom of the box: a digit has no descender
+ * here, so the box's bottom edge IS the baseline, and a comma belongs as
+ * low against it as the space allows.
+ *
+ * KEEP IN SYNC: .dg-comma-slot's flex ratio must equal COMMA_W / W.
+ */
+const COMMA_W = 30
+
+function SevenSegComma() {
+  return (
+    <svg
+      className="dg-glyph"
+      viewBox={`0 0 ${COMMA_W} ${H}`}
+      preserveAspectRatio="xMidYMid meet"
+      aria-hidden="true"
+    >
+      <rect
+        className="dg-seg dg-seg-on"
+        x={COMMA_W - THICK - 1}
+        y={H - 2 * THICK}
+        width={THICK}
+        height={THICK}
+      />
+      <rect
+        className="dg-seg dg-seg-on"
+        x="1"
+        y={H - THICK}
+        width={THICK}
+        height={THICK}
+      />
+    </svg>
+  )
+}
+
 export default memo(SevenSegDigit)
+export { SevenSegComma }
