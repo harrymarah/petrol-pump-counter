@@ -51,14 +51,32 @@
  * properties can't use the container units it defines — only its
  * descendants can).
  *
- * The third term in the min() caps the frame by HEIGHT: at 3.87:1, a
- * frame whose height is 62vh is 240vh wide, so this keeps the frame plus
+ * The third term in the min() caps the frame by HEIGHT: at 2.98:1, a
+ * frame whose height is 62vh is 185vh wide, so this keeps the frame plus
  * the controls below it inside the viewport on short screens instead of
  * letting a wide-but-short window push the buttons off the bottom.
+ *
+ * WIDTH IS A FUNCTION OF DIGIT_COUNT — recompute all three numbers below
+ * if it changes again. The reference artwork's frame is 1556 x 402 for
+ * TEN figures; at eight it has to come in, or the row keeps the
+ * reference's box while losing the density that box was drawn around
+ * (measured: glyphs at 71% of their slot and gaps at 0.77 of a digit,
+ * against ~99% and 0.35 before). Solving .dg-digits' own geometry for
+ * the width at which a slot equals a glyph's drawn width:
+ *   slot height  = 47.5% of frame height, glyph aspect 87/180
+ *     -> a digit draws 0.2296 frame-heights wide
+ *   slot units   = 8 digits + 2 commas x 0.345 = 8.69
+ *   gap g        = 0.35 of a digit (see .dg-digits) = 0.0804
+ *   content C    = 8.69 x 0.2296 + 9 x 0.0804 = 2.718
+ *   frame width  = C / 0.913 (the 4.35% padding either side) = 2.977
+ * i.e. 2.977 x 402 = 1197, keeping 402 as the reference's own height so
+ * every vertical proportion on the frame is untouched. The other two
+ * min() terms are the old ones rescaled by 2.977/3.871 (1750 -> 1346)
+ * and 62vh x 2.977 (240vh -> 185vh), so the digits cap at the same size.
  */
 .dg-stage {
-  width: min(90vw, 1750px, 240vh);
-  aspect-ratio: 1556 / 402;
+  width: min(90vw, 1346px, 185vh);
+  aspect-ratio: 1197 / 402;
   container-type: size;
 }
 
@@ -118,12 +136,17 @@
      separators, so it can afford a 0.60-of-a-digit gap between all ten
      figures; three comma slots plus their three extra gaps do not fit
      alongside that, and keeping it would have shrunk every digit by
-     ~23%. At 2.3% the gap works out to ~0.35 of a digit width, which
-     holds the digits at the reference's own size and buys the room back.
-     The grouping reads better for it too: digits inside a group sit
-     close, and a comma plus the gap either side opens a break three
-     times as wide at each thousands boundary. */
-  gap: 2.3%;
+     ~23%. A gap of ~0.35 of a digit width holds the digits at the
+     reference's own size and buys the room back. The grouping reads
+     better for it too: digits inside a group sit close, and a comma plus
+     the gap either side opens a break three times as wide at each
+     thousands boundary.
+     KEEP IN STEP WITH .dg-stage: this is a percentage of the container's
+     width, so the frame width and this value are solved together for
+     that 0.35 (the derivation is in .dg-stage's comment). It read 2.3%
+     when the frame was the reference's own 10-figure box; at 8 figures
+     the frame is narrower, so the same 0.35 is a larger share of it. */
+  gap: 2.96%;
 }
 
 .dg-slot {

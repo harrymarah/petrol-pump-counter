@@ -4,7 +4,7 @@ import SevenSegDigit, { SevenSegComma } from './SevenSegDigit.jsx'
 import './App.css'
 import './Digital.css'
 
-const DIGIT_COUNT = 10  // covers up to 9,999,999,999 — real target is ~3.5 billion litres
+const DIGIT_COUNT = 8  // covers up to 99,999,999 — real target is 48 million litres
 // Positions (0-indexed from the left) after which a comma is printed —
 // derived from DIGIT_COUNT so it's automatically correct if this changes
 // again (standard thousands grouping, counting from the right).
@@ -16,12 +16,11 @@ const COMMA_AFTER = Array.from({ length: DIGIT_COUNT - 1 }, (_, i) => i).filter(
 // interrupted mid-animation — that mismatch (50ms ticks vs a 120ms
 // transition) was the main cause of the juddery motion.
 const TICK_MS = 120
-// The real answer the client will reveal, in LITRES (not cans — a can is
-// ~250ml, so ~14 billion cans is ~3.5 billion litres). Pacing below is
+// The real answer the client will reveal, in LITRES. Pacing below is
 // derived from THIS, not MAX_VALUE — MAX_VALUE is just the display's
 // headroom so the counter can keep running sensibly if held past the
 // target, not the number a run is paced to reach.
-const REAL_TARGET = 3_500_000_000
+const REAL_TARGET = 48_000_000
 const RUN_SECONDS = 15  // client's requested run length: the counter should
                         // reach the target ~15 s after START
 const RAMP_TICKS = 8  // ticks to reach full speed (~1 s)
